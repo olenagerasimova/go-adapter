@@ -8,8 +8,9 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.yegor256/goproxy.svg)](https://maven-badges.herokuapp.com/maven-central/com.yegor256/goproxy)
 [![PDD status](http://www.0pdd.com/svg?name=yegor256/goproxy-java)](http://www.0pdd.com/p?name=yegor256/goproxy-java)
 
-This Java library turns your binary storage
-(files, S3 objects, anything) into an Go repository.
+This Java library turns your storage
+(files, S3 objects, anything) with Go sources into
+a Go repository.
 
 Similar solutions:
 
@@ -19,6 +20,7 @@ Some valuable references:
 
   * [Module proxy protocol](https://golang.org/cmd/go/#hdr-Module_proxy_protocol)
   * [Why you should use a Go module proxy](https://arslan.io/2019/08/02/why-you-should-use-a-go-module-proxy/)
+  * [Go Modules Are Awesome, But There Is One Tiny Problem](https://jfrog.com/blog/go-modules-are-awesome-but-there-is-one-tiny-problem/)
 
 This is the dependency you need:
 
@@ -31,13 +33,12 @@ This is the dependency you need:
 ```
 
 Then, you implement `com.yegor256.goproxy.Storage` interface
-and pass it to the instance of `com.yegor256.goproxy.Front`. Then, you
-connect the `front` to your HTTP front:
+and pass it to the instance of `com.yegor256.goproxy.Goproxy`. Then, you
+let it know when is the right moment to update certain artifact:
 
 ```java
-Front front = new Front(storage);
-InputStream data = front.get("/foo/bar/@v/0.0.0.info");
-// Return the data to your HTTP client
+Goproxy goproxy = new Goproxy(storage);
+goproxy.update("foo/bar", "0.0.1");
 ```
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.yegor256/goproxy)

@@ -23,7 +23,9 @@
  */
 package com.yegor256.goproxy;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.cactoos.text.TextOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -38,7 +40,7 @@ import org.junit.rules.TemporaryFolder;
  * @version $Id$
  * @since 0.1
  */
-public final class FrontTest {
+public final class GoproxyTest {
 
     /**
      * Temp folder for all tests.
@@ -55,9 +57,13 @@ public final class FrontTest {
     public void readsGoPackageData() throws Exception {
         final Path dir = this.folder.newFolder().toPath();
         final Storage storage = new Storage.Simple(dir);
-        final Front front = new Front(storage);
+        Files.write(Paths.get(dir.toString(), "go.mod"), "".getBytes());
+        final Goproxy goproxy = new Goproxy(storage);
+        goproxy.update("foo/bar", "0.0.1");
+        final Path info = this.folder.newFile().toPath();
+        storage.load("foo/bar/@v/0.0.0.info", info);
         MatcherAssert.assertThat(
-            new TextOf(front.get("/foo/bar/@v/0.0.0.info")).asString(),
+            new TextOf(info).asString(),
             Matchers.notNullValue()
         );
     }

@@ -23,17 +23,32 @@
  */
 package com.yegor256.goproxy;
 
-import java.io.InputStream;
-import org.cactoos.io.InputStreamOf;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
- * The front.
+ * The Go front.
+ *
+ * First, you make an instance of this class, providing
+ * your storage as an argument:
+ *
+ * <pre> Goproxy goproxy = new Goproxy(storage);</pre>
+ *
+ * Then, you put your Go sources to the storage and call
+ * {@link Goproxy#update(String,String)}. This method will parse the RPM package
+ * and update all the necessary meta-data files. Right after this,
+ * your clients will be able to use the package, via {@code yum}:
+ *
+ * <pre> rpm.update("nginx.rpm");</pre>
+ *
+ * That's it.
  *
  * @author Yegor Bugayenko (yegor256@gmail.com)
  * @version $Id$
  * @since 0.1
  */
-public final class Front {
+public final class Goproxy {
 
     /**
      * The storage.
@@ -42,20 +57,33 @@ public final class Front {
 
     /**
      * Ctor.
-     * @param stg Storage
+     * @param stg The storage
      */
-    public Front(final Storage stg) {
+    public Goproxy(final Storage stg) {
         this.storage = stg;
     }
 
     /**
-     * Process incoming HTTP GET request.
-     * @param path The path
-     * @return Input stream with data
+     * Update the meta info by this artifact.
+     *
+     * @param repo The name of the repo just updated, e.g. "example.com/foo/bar"
+     * @param version The version of the repo, e.g. "0.0.1"
+     * @throws IOException If fails
      */
-    public InputStream get(final String path) {
-        assert this.storage != null;
-        return new InputStreamOf(path);
+    public void update(final String repo, final String version)
+        throws IOException {
+        synchronized (this.storage) {
+            final Path mod = Files.createTempFile("", ".rpm");
+            final String[] parts = repo.split("/", 2);
+            this.storage.load(
+                String.format("%s/go.mod", parts[1]),
+                mod
+            );
+            this.storage.save(
+                String.format("%s/@v/v%s.mod", repo, version),
+                mod
+            );
+        }
     }
 
 }
