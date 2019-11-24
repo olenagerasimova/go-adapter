@@ -46,14 +46,61 @@ for more technical details.
 
 ## How it works?
 
-When `update()` is called it creates four files:
+It is assumed that package sources are located in the repository
+by their package names. For example, if you have two packages, they
+may be located like this:
 
+```
+/foo
+  /first
+    go.mod
+    foo.go
+    LICENSE.txt
+/bar
+  /second
+    go.mod
+    bar.go
+```
+
+Then, when you are ready to release a new version `0.0.1`, you call
+`update("example.com/foo/first", "0.0.1")`. Four new files will be created:
+
+```
+/example.com
+  /foo
+    /first@v0.0.1
+      list
+      v0.0.1.zip
+      v0.0.1.mod
+      v0.0.1.info
+```
+
+These files are needed for Go to understand that the package is ready
+to be used.
 There are samples of these files from Google repository:
 [`.mod`](https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.mod),
 [`.info`](https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.info),
 [`.zip`](https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.zip),
 and
 [`list`](https://proxy.golang.org/github.com/liujianping/ts/@v/list).
+
+When you decide to release another version, three additional files will
+be created when you call `update("example.com/foo/first", "0.0.2")`:
+
+```
+/example.com
+  /foo
+    /first@v0.0.1
+      list
+      v0.0.1.zip
+      v0.0.1.mod
+      v0.0.1.info
+      v0.0.2.zip
+      v0.0.2.mod
+      v0.0.2.info
+```
+
+The file `list` will be updated.
 
 ## How to contribute
 
