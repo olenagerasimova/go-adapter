@@ -3,7 +3,7 @@ readers:
 docker:
   image: yegor256/java8
 assets:
-  settings.xml: yegor256/home#assets/goproxy/settings.xml
+  settings.xml: yegor256/home#assets/goproxy-java/settings.xml
   pubring.gpg: yegor256/home#assets/pubring.gpg
   secring.gpg: yegor256/home#assets/secring.gpg
 env:
