@@ -44,7 +44,16 @@ goproxy.update("foo/bar", "0.0.1");
 Read the [Javadoc](http://www.javadoc.io/doc/com.yegor256/goproxy)
 for more technical details.
 
-Should work.
+## How it works?
+
+When `update()` is called it creates four files:
+
+There are samples of these files from Google repository:
+[`.mod`](https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.mod),
+[`.info`](https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.info),
+[`.zip`](https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.zip),
+and
+[`list`](https://proxy.golang.org/github.com/liujianping/ts/@v/list).
 
 ## How to contribute
 

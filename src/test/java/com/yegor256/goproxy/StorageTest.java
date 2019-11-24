@@ -25,8 +25,6 @@ package com.yegor256.goproxy;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import org.cactoos.text.TextOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -40,7 +38,7 @@ import org.junit.rules.TemporaryFolder;
  * @version $Id$
  * @since 0.1
  */
-public final class GoproxyTest {
+public final class StorageTest {
 
     /**
      * Temp folder for all tests.
@@ -50,21 +48,53 @@ public final class GoproxyTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     /**
-     * Reads go package data.
+     * Fake storage works.
      * @throws Exception If some problem inside
      */
     @Test
-    public void readsGoPackageData() throws Exception {
-        final Path dir = this.folder.newFolder().toPath();
-        final Storage storage = new Storage.Simple(dir);
-        Files.write(Paths.get(dir.toString(), "go.mod"), "".getBytes());
-        final Goproxy goproxy = new Goproxy(storage);
-        goproxy.update("foo/bar", "0.0.1");
-        final Path info = this.folder.newFile().toPath();
-        storage.load("foo/bar/@v/0.0.0.info", info);
+    public void savesAndLoads() throws Exception {
+        final Storage storage = new Storage.Simple();
+        final Path input = this.folder.newFile("a.deb").toPath();
+        final String content = "Hello, друг!";
+        Files.write(input, content.getBytes());
+        final String key = "a/b/test.deb";
+        storage.save(key, input);
+        final Path output = this.folder.newFile("b.deb").toPath();
+        storage.load(key, output);
         MatcherAssert.assertThat(
-            new TextOf(info).asString(),
-            Matchers.notNullValue()
+            new String(Files.readAllBytes(output)),
+            Matchers.equalTo(content)
+        );
+    }
+
+    /**
+     * Simple storage lists files.
+     * @throws Exception If some problem inside
+     */
+    @Test
+    @SuppressWarnings("PMD.AvoidDuplicateLiterals")
+    public void listsFiles() throws Exception {
+        final Path input = this.folder.newFile("xxx").toPath();
+        Files.write(input, "test".getBytes());
+        final Storage storage = new Storage.Simple();
+        storage.save("foo/bar-hello/t1", input);
+        storage.save("foo/bar-hello/xx/yy/t2", input);
+        storage.save("f/t3", input);
+        MatcherAssert.assertThat(
+            storage.list("foo/bar-hello/"),
+            Matchers.hasSize(2)
+        );
+        MatcherAssert.assertThat(
+            storage.list("foo/bar-hello/"),
+            Matchers.hasItem("foo/bar-hello/xx/yy/t2")
+        );
+        MatcherAssert.assertThat(
+            storage.list("f/"),
+            Matchers.hasSize(1)
+        );
+        MatcherAssert.assertThat(
+            storage.list("f/").iterator().next(),
+            Matchers.equalTo("f/t3")
         );
     }
 

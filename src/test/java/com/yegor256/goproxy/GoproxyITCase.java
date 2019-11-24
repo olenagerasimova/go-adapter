@@ -27,6 +27,10 @@ import com.jcabi.log.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.cactoos.io.OutputTo;
+import org.cactoos.io.ResourceOf;
+import org.cactoos.io.TeeInput;
+import org.cactoos.scalar.LengthOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -39,6 +43,7 @@ import org.junit.rules.TemporaryFolder;
  * @author Yegor Bugayenko (yegor256@gmail.com)
  * @version $Id$
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class GoproxyITCase {
@@ -55,21 +60,22 @@ public final class GoproxyITCase {
      * @throws Exception If some problem inside
      */
     @Test
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     public void savesAndLoads() throws Exception {
         final Path repo = this.folder.newFolder("repo").toPath();
+        for (final String file
+            : new String[] {"bar.go", "go.mod", "texts/test.txt"}) {
+            new LengthOf(
+                new TeeInput(
+                    new ResourceOf(String.format("bar/%s", file)),
+                    new OutputTo(Paths.get(repo.toString(), "foo", "bar", file))
+                )
+            ).intValue();
+        }
         final Storage storage = new Storage.Simple(repo);
         final Goproxy goproxy = new Goproxy(storage);
-        final Path mod = Paths.get(repo.toString(), "foo/bar/go.mod");
-        mod.toFile().getParentFile().mkdirs();
-        Files.write(
-            mod,
-            String.join(
-                "\n",
-                "module example.com/foo/bar",
-                "go 1.13"
-            ).getBytes()
-        );
         goproxy.update("example.com/foo/bar", "0.0.123");
+        goproxy.update("example.com/foo/bar", "0.0.124");
         final Path stdout = this.folder.newFile("stdout.txt").toPath();
         final Path home = this.folder.newFolder("home").toPath();
         Files.write(
@@ -77,7 +83,7 @@ public final class GoproxyITCase {
             String.join(
                 "\n",
                 "module example.com/foo/xxx",
-                "require example.com/foo/bar v0.0.123",
+                "require example.com/foo/bar v0.0.124",
                 "go 1.13"
             ).getBytes()
         );
@@ -86,9 +92,11 @@ public final class GoproxyITCase {
             String.join(
                 "\n",
                 "package main",
+                "import \"fmt\"",
                 "import \"example.com/foo/bar\"",
                 "func main() {",
-                    "fmt.Println(\"Hello World!\")",
+                    "fmt.Println(\"Hey, you!\")",
+                    "bar.SayHello()",
                 "}"
             ).getBytes()
         );
@@ -101,8 +109,11 @@ public final class GoproxyITCase {
                     "\n",
                     "set -e",
                     "set -x",
+                    "export GOSUMDB=off",
+                    String.format("export GOPATH=%s/gopath", repo),
                     String.format("export GOPROXY=file://%s", repo),
-                    "go install -v"
+                    "go install -v",
+                    "go run test.go"
                 )
             )
             .redirectOutput(stdout.toFile())
@@ -114,8 +125,11 @@ public final class GoproxyITCase {
         MatcherAssert.assertThat(
             log,
             Matchers.allOf(
-                Matchers.containsString("0.0.123"),
-                Matchers.containsString("foo/bar")
+                Matchers.containsString(
+                    "go: downloading example.com/foo/bar v0.0.124"
+                ),
+                Matchers.containsString("Hey, you!"),
+                Matchers.containsString("Works!!!")
             )
         );
     }
