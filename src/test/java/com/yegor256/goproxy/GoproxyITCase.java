@@ -33,6 +33,8 @@ import org.cactoos.io.TeeInput;
 import org.cactoos.scalar.LengthOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -54,6 +56,22 @@ public final class GoproxyITCase {
     @Rule
     @SuppressWarnings("PMD.BeanMembersShouldSerialize")
     public TemporaryFolder folder = new TemporaryFolder();
+
+    /**
+     * Make sure Go is here.
+     * @throws Exception If fails
+     */
+    @Before
+    public void goExists() throws Exception {
+        Assume.assumeThat(
+            "Go is NOT present at the build machine",
+            new ProcessBuilder()
+                .command("which", "go")
+                .start()
+                .waitFor(),
+            Matchers.equalTo(0)
+        );
+    }
 
     /**
      * RPM works.
