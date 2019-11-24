@@ -38,7 +38,7 @@ let it know when is the right moment to update certain artifact:
 
 ```java
 Goproxy goproxy = new Goproxy(storage);
-goproxy.update("foo/bar", "0.0.1");
+goproxy.update("example.com/foo/bar", "0.0.1");
 ```
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.yegor256/goproxy)
