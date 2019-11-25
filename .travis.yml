@@ -3,8 +3,6 @@ sudo: false
 cache:
   directories:
     - $HOME/.m2
-go:
-  - "1.13"
 script:
   - set -e
   - go version
@@ -21,4 +19,4 @@ env:
     - MAVEN_OPTS="-Xmx256m"
     - JAVA_OPTS="-Xmx256m"
 jdk:
-  - openjdk11
+  - openjdk8
