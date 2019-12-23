@@ -23,6 +23,7 @@
  */
 package com.yegor256.goproxy;
 
+import com.yegor256.asto.Storage;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
