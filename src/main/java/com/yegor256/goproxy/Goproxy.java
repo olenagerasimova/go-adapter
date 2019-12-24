@@ -24,12 +24,11 @@
 package com.yegor256.goproxy;
 
 import com.yegor256.asto.Storage;
+import io.reactivex.rxjava3.core.Completable;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.cactoos.io.InputOf;
@@ -48,11 +47,15 @@ import org.cactoos.scalar.LengthOf;
  * <pre> Goproxy goproxy = new Goproxy(storage);</pre>
  *
  * Then, you put your Go sources to the storage and call
- * {@link Goproxy#update(String,String)}. This method will parse the RPM package
- * and update all the necessary meta-data files. Right after this,
- * your clients will be able to use the package, via {@code yum}:
+ * {@link Goproxy#update(String,String)}. This method will update all the
+ * necessary meta-data files. Right after this, your clients will be able to use
+ * the sources, via {@code go get}:
  *
- * <pre> rpm.update("nginx.rpm");</pre>
+ * <pre> goproxy.update("example.com/foo/bar", "0.0.1").blockingAwait();</pre>
+ *
+ * You can also do the same in an async way:
+ *
+ * <pre> goproxy.update("example.com/foo/bar", "0.0.1").subscribe();</pre>
  *
  * That's it.
  *
@@ -60,6 +63,8 @@ import org.cactoos.scalar.LengthOf;
  * @version $Id$
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle LineLengthCheck (500 lines)
+ * @checkstyle ReturnCountCheck (500 lines)
  */
 public final class Goproxy {
 
@@ -81,62 +86,76 @@ public final class Goproxy {
      *
      * @param repo The name of the repo just updated, e.g. "example.com/foo/bar"
      * @param version The version of the repo, e.g. "0.0.1"
-     * @throws IOException If fails
+     * @return Completion or error signal.
      */
-    public void update(final String repo, final String version)
-        throws IOException {
-        synchronized (this.storage) {
-            final Path mod = Files.createTempFile("", ".rpm");
-            final String[] parts = repo.split("/", 2);
-            this.storage.load(
-                String.format("%s/go.mod", parts[1]),
-                mod
-            );
-            this.storage.save(
-                String.format("%s/@v/v%s.mod", repo, version),
-                mod
-            );
-            final Path zip = Files.createTempFile("", ".zip");
-            this.archive(
-                String.format("%s/", parts[1]),
-                String.format("%s@v%s", repo, version),
-                zip
-            );
-            this.storage.save(
-                String.format("%s/@v/v%s.zip", repo, version),
-                zip
-            );
-            final Path json = Files.createTempFile("", ".json");
-            Files.write(
-                json,
-                String.format(
-                    "{\"Version\":\"v%s\",\"Time\":\"2019-06-28T10:22:31Z\"}",
-                    version
-                ).getBytes()
-            );
-            this.storage.save(
-                String.format("%s/@v/v%s.info", repo, version),
-                json
-            );
-            final Path list = Files.createTempFile("", ".list");
-            final String lkey = String.format("%s/@v/list", repo);
-            if (this.storage.exists(lkey)) {
-                this.storage.load(lkey, list);
-            }
-            Files.write(
-                list,
-                new org.cactoos.text.Joined(
-                    "\n",
-                    new Joined<String>(
-                        new ListOf<>(
-                            new String(Files.readAllBytes(list)).split("\n")
-                        ),
-                        new ListOf<>(String.format("v%s", version))
+    public Completable update(final String repo, final String version) {
+        return Completable.defer(
+            () -> {
+                final Path mod = Files.createTempFile("", ".rpm");
+                final String[] parts = repo.split("/", 2);
+                final Path zip = Files.createTempFile("", ".zip");
+                final Path json = Files.createTempFile("", ".json");
+                final Path list = Files.createTempFile("", ".list");
+                final String lkey = String.format("%s/@v/list", repo);
+                return this.storage.load(
+                    String.format("%s/go.mod", parts[1]),
+                    mod
+                ).andThen(
+                    this.storage.save(
+                        String.format("%s/@v/v%s.mod", repo, version),
+                        mod
                     )
-                ).asString().getBytes()
-            );
-            this.storage.save(lkey, list);
-        }
+                ).andThen(
+                    this.archive(
+                        String.format("%s/", parts[1]),
+                        String.format("%s@v%s", repo, version),
+                        zip
+                    )
+                ).andThen(
+                    this.storage.save(
+                        String.format("%s/@v/v%s.zip", repo, version),
+                        zip
+                    )
+                ).andThen(
+                    Completable.fromAction(
+                        () -> Files.write(
+                            json,
+                            String.format(
+                                "{\"Version\":\"v%s\",\"Time\":\"2019-06-28T10:22:31Z\"}",
+                                version
+                            ).getBytes()
+                        )
+                    )).andThen(
+                    this.storage.save(
+                        String.format("%s/@v/v%s.info", repo, version),
+                        json
+                    )
+                ).andThen(this.storage.exists(lkey))
+                    .flatMapCompletable(
+                        exists -> {
+                            if (exists) {
+                                return this.storage.load(lkey, list);
+                            } else {
+                                return Completable.complete();
+                            }
+                        })
+                    .andThen(
+                        Completable.fromAction(
+                            () -> Files.write(
+                                list,
+                                new org.cactoos.text.Joined(
+                                    "\n",
+                                    new Joined<String>(
+                                        new ListOf<>(
+                                            new String(Files.readAllBytes(list)).split("\n")
+                                        ),
+                                        new ListOf<>(String.format("v%s", version))
+                                    )
+                                ).asString().getBytes()
+                            )
+                        )
+                    ).andThen(this.storage.save(lkey, list));
+            });
     }
 
     /**
@@ -144,35 +163,49 @@ public final class Goproxy {
      * @param prefix The prefix
      * @param target The path in the ZIP archive to place files to
      * @param zip The ZIP archive
-     * @throws IOException If fails
+     * @return Completion or error signal.
      */
     @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-    private void archive(final String prefix,
-        final String target, final Path zip) throws IOException {
-        final Map<String, String> env = new HashMap<>(1);
-        env.put("create", "true");
-        if (zip.toFile().exists()) {
-            Files.delete(zip);
-        }
-        try (final ZipOutputStream out =
-            new ZipOutputStream(new FileOutputStream(zip.toFile()))) {
-            final Path tmp = Files.createTempFile("", ".tmp");
-            for (final String key : this.storage.list(prefix)) {
-                this.storage.load(key, tmp);
-                final String path = String.format(
-                    "%s/%s", target, key.substring(prefix.length())
-                );
-                final ZipEntry entry = new ZipEntry(path);
-                out.putNextEntry(entry);
-                new LengthOf(
-                    new TeeInput(
-                        new InputOf(tmp),
-                        new OutputTo(out)
-                    )
-                ).intValue();
-                out.closeEntry();
-            }
-        }
+    private Completable archive(final String prefix,
+        final String target, final Path zip) {
+        return Completable.fromAction(
+            () -> {
+                if (zip.toFile().exists()) {
+                    Files.delete(zip);
+                }
+            }).andThen(this.storage.list(prefix))
+            .flatMapCompletable(
+                keys -> {
+                    final ZipOutputStream out =
+                        new ZipOutputStream(new FileOutputStream(zip.toFile()));
+                    final Path tmp = Files.createTempFile("", ".tmp");
+                    return Completable.concat(
+                        keys.stream().map(
+                            key -> this.storage.load(key, tmp)
+                                .andThen(
+                                    Completable.fromAction(
+                                        () -> {
+                                            final String path = String.format(
+                                                "%s/%s",
+                                                target,
+                                                key.substring(prefix.length())
+                                            );
+                                            final ZipEntry entry =
+                                                new ZipEntry(path);
+                                            out.putNextEntry(entry);
+                                            new LengthOf(
+                                                new TeeInput(
+                                                    new InputOf(tmp),
+                                                    new OutputTo(out)
+                                                )
+                                            ).intValue();
+                                            out.closeEntry();
+                                        }
+                                    )
+                                )
+                        ).collect(Collectors.toList())
+                    ).doOnTerminate(out::close);
+                });
     }
 
 }

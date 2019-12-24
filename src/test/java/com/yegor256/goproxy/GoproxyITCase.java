@@ -93,8 +93,8 @@ public final class GoproxyITCase {
         }
         final Storage storage = new Storage.Simple(repo);
         final Goproxy goproxy = new Goproxy(storage);
-        goproxy.update("example.com/foo/bar", "0.0.123");
-        goproxy.update("example.com/foo/bar", "0.0.124");
+        goproxy.update("example.com/foo/bar", "0.0.123").blockingAwait();
+        goproxy.update("example.com/foo/bar", "0.0.124").blockingAwait();
         final Path stdout = this.folder.newFile("stdout.txt").toPath();
         final Path home = this.folder.newFolder("home").toPath();
         Files.write(
