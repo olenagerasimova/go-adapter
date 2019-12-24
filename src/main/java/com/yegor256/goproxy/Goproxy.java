@@ -65,7 +65,6 @@ import org.cactoos.scalar.LengthOf;
  * @version $Id$
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines)
  * @checkstyle ReturnCountCheck (500 lines)
  */
 public final class Goproxy {
@@ -153,7 +152,9 @@ public final class Goproxy {
         return Single.defer(
             () -> {
                 final Path mod = Files.createTempFile("", ".mod");
-                return this.storage.load(String.format("%s/go.mod", parts[1]), mod).andThen(Single.just(mod));
+                return this.storage.load(
+                    String.format("%s/go.mod", parts[1]), mod
+                ).andThen(Single.just(mod));
             }
         );
     }
