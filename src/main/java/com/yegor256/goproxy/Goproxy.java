@@ -25,7 +25,9 @@ package com.yegor256.goproxy;
 
 import com.yegor256.asto.Storage;
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Single;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
@@ -89,73 +91,132 @@ public final class Goproxy {
      * @return Completion or error signal.
      */
     public Completable update(final String repo, final String version) {
-        return Completable.defer(
+        return Completable.defer(() -> this.actualUpdate(repo, version));
+    }
+
+    /**
+     * Update the meta info by this artifact.
+     *
+     * @param repo The name of the repo just updated, e.g. "example.com/foo/bar"
+     * @param version The version of the repo, e.g. "0.0.1"
+     * @return Completion or error signal.
+     * @throws IOException if fails.
+     */
+    private Completable actualUpdate(final String repo,
+        final String version) throws IOException {
+        final String[] parts = repo.split("/", 2);
+        final Path zip = Files.createTempFile("", ".zip");
+        final Path json = Files.createTempFile("", ".json");
+        final Path list = Files.createTempFile("", ".list");
+        final String lkey = String.format("%s/@v/list", repo);
+        return this.loadGoModFile(parts)
+            .flatMapCompletable(
+                mod -> this.saveModWithVersion(repo, version, mod)
+            ).andThen(
+                this.archive(
+                    String.format("%s/", parts[1]),
+                    String.format("%s@v%s", repo, version),
+                    zip
+                )
+            ).andThen(
+                this.storage.save(
+                    String.format("%s/@v/v%s.zip", repo, version),
+                    zip
+                )
+            )
+            .andThen(writeVersionJson(version, json))
+            .andThen(
+                this.storage.save(
+                    String.format("%s/@v/v%s.info", repo, version),
+                    json
+                )
+            ).andThen(this.storage.exists(lkey))
+            .flatMapCompletable(
+                exists -> {
+                    if (exists) {
+                        return this.storage.load(lkey, list);
+                    } else {
+                        return Completable.complete();
+                    }
+                })
+            .andThen(writeFileList(version, list))
+            .andThen(this.storage.save(lkey, list));
+    }
+
+    /**
+     * Load mod.go file from the storage.
+     *
+     * @param parts Parts of the repo path
+     * @return Path to mod.go file.
+     */
+    private Single<Path> loadGoModFile(final String... parts) {
+        return Single.defer(
             () -> {
-                final Path mod = Files.createTempFile("", ".rpm");
-                final String[] parts = repo.split("/", 2);
-                final Path zip = Files.createTempFile("", ".zip");
-                final Path json = Files.createTempFile("", ".json");
-                final Path list = Files.createTempFile("", ".list");
-                final String lkey = String.format("%s/@v/list", repo);
-                return this.storage.load(
-                    String.format("%s/go.mod", parts[1]),
-                    mod
-                ).andThen(
-                    this.storage.save(
-                        String.format("%s/@v/v%s.mod", repo, version),
-                        mod
+                final Path mod = Files.createTempFile("", ".mod");
+                return this.storage.load(String.format("%s/go.mod", parts[1]), mod).andThen(Single.just(mod));
+            }
+        );
+    }
+
+    /**
+     * Save given mod file to the storage.
+     *
+     * @param repo The name of the repo just updated, e.g. "example.com/foo/bar"
+     * @param version The version of the repo, e.g. "0.0.1"
+     * @param mod The path to the mod file
+     * @return Completion or error signal.
+     */
+    private Completable saveModWithVersion(final String repo,
+        final String version, final Path mod) {
+        return this.storage.save(
+            String.format("%s/@v/v%s.mod", repo, version),
+            mod
+        );
+    }
+
+    /**
+     * Write files list.
+     *
+     * @param version The version of the repo, e.g. "0.0.1"
+     * @param list Where to save the result
+     * @return Completion or error signal.
+     */
+    private static Completable writeFileList(final String version,
+        final Path list) {
+        return Completable.fromAction(
+            () -> Files.write(
+                list,
+                new org.cactoos.text.Joined(
+                    "\n",
+                    new Joined<String>(
+                        new ListOf<>(
+                            new String(Files.readAllBytes(list)).split("\n")
+                        ),
+                        new ListOf<>(String.format("v%s", version))
                     )
-                ).andThen(
-                    this.archive(
-                        String.format("%s/", parts[1]),
-                        String.format("%s@v%s", repo, version),
-                        zip
-                    )
-                ).andThen(
-                    this.storage.save(
-                        String.format("%s/@v/v%s.zip", repo, version),
-                        zip
-                    )
-                ).andThen(
-                    Completable.fromAction(
-                        () -> Files.write(
-                            json,
-                            String.format(
-                                "{\"Version\":\"v%s\",\"Time\":\"2019-06-28T10:22:31Z\"}",
-                                version
-                            ).getBytes()
-                        )
-                    )).andThen(
-                    this.storage.save(
-                        String.format("%s/@v/v%s.info", repo, version),
-                        json
-                    )
-                ).andThen(this.storage.exists(lkey))
-                    .flatMapCompletable(
-                        exists -> {
-                            if (exists) {
-                                return this.storage.load(lkey, list);
-                            } else {
-                                return Completable.complete();
-                            }
-                        })
-                    .andThen(
-                        Completable.fromAction(
-                            () -> Files.write(
-                                list,
-                                new org.cactoos.text.Joined(
-                                    "\n",
-                                    new Joined<String>(
-                                        new ListOf<>(
-                                            new String(Files.readAllBytes(list)).split("\n")
-                                        ),
-                                        new ListOf<>(String.format("v%s", version))
-                                    )
-                                ).asString().getBytes()
-                            )
-                        )
-                    ).andThen(this.storage.save(lkey, list));
-            });
+                ).asString().getBytes()
+            )
+        );
+    }
+
+    /**
+     * Write provided version to a json file.
+     *
+     * @param version The version of the repo, e.g. "0.0.1"
+     * @param json The path to the version.json file
+     * @return Completion or error signal.
+     */
+    private static Completable writeVersionJson(final String version,
+        final Path json) {
+        return Completable.fromAction(
+            () -> Files.write(
+                json,
+                String.format(
+                    "{\"Version\":\"v%s\",\"Time\":\"2019-06-28T10:22:31Z\"}",
+                    version
+                ).getBytes()
+            )
+        );
     }
 
     /**
@@ -173,7 +234,8 @@ public final class Goproxy {
                 if (zip.toFile().exists()) {
                     Files.delete(zip);
                 }
-            }).andThen(this.storage.list(prefix))
+            })
+            .andThen(this.storage.list(prefix))
             .flatMapCompletable(
                 keys -> {
                     final ZipOutputStream out =
