@@ -64,7 +64,8 @@ may be located like this:
 ```
 
 Then, when you are ready to release a new version `0.0.1`, you call
-`update("example.com/foo/first", "0.0.1")`. Four new files will be created:
+`update("example.com/foo/first", "0.0.1").blockingAwait()` or `update("example.com/foo/first", "0.0.1").subscribe()` for async execution.
+Four new files will be created:
 
 ```
 /example.com
@@ -86,7 +87,7 @@ and
 [`list`](https://proxy.golang.org/github.com/liujianping/ts/@v/list).
 
 When you decide to release another version, three additional files will
-be created when you call `update("example.com/foo/first", "0.0.2")`:
+be created when you call `update("example.com/foo/first", "0.0.2").blockingAwait()`:
 
 ```
 /example.com
