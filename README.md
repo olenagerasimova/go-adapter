@@ -1,13 +1,13 @@
 [![EO principles respected here](https://www.elegantobjects.org/badge.svg)](https://www.elegantobjects.org)
-[![DevOps By Rultor.com](http://www.rultor.com/b/yegor256/goproxy-java)](http://www.rultor.com/p/yegor256/goproxy-java)
+[![DevOps By Rultor.com](http://www.rultor.com/b/artipie/go-adapter)](http://www.rultor.com/p/artipie/go-adapter)
 [![We recommend IntelliJ IDEA](https://www.elegantobjects.org/intellij-idea.svg)](https://www.jetbrains.com/idea/)
 
-[![Build Status](https://img.shields.io/travis/yegor256/goproxy-java/master.svg)](https://travis-ci.org/yegor256/goproxy-java)
-[![Javadoc](http://www.javadoc.io/badge/com.yegor256/goproxy.svg)](http://www.javadoc.io/doc/com.yegor256/goproxy)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/yegor256/goproxy/blob/master/LICENSE.txt)
-[![Hits-of-Code](https://hitsofcode.com/github/yegor256/goproxy-java)](https://hitsofcode.com/view/github/yegor256/goproxy-java)
-[![Maven Central](https://img.shields.io/maven-central/v/com.yegor256/goproxy.svg)](https://maven-badges.herokuapp.com/maven-central/com.yegor256/goproxy)
-[![PDD status](http://www.0pdd.com/svg?name=yegor256/goproxy-java)](http://www.0pdd.com/p?name=yegor256/goproxy-java)
+[![Build Status](https://img.shields.io/travis/artipie/go-adapter/master.svg)](https://travis-ci.org/artipie/go-adapter)
+[![Javadoc](http://www.javadoc.io/badge/com.artipie/goproxy.svg)](http://www.javadoc.io/doc/com.artipie/goproxy)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/goproxy/blob/master/LICENSE.txt)
+[![Hits-of-Code](https://hitsofcode.com/github/artipie/go-adapter)](https://hitsofcode.com/view/github/artipie/go-adapter)
+[![Maven Central](https://img.shields.io/maven-central/v/com.artipie/goproxy.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/goproxy)
+[![PDD status](http://www.0pdd.com/svg?name=artipie/go-adapter)](http://www.0pdd.com/p?name=artipie/go-adapter)
 
 This Java library turns your storage
 (files, S3 objects, anything) with Go sources into
@@ -27,14 +27,14 @@ This is the dependency you need:
 
 ```xml
 <dependency>
-  <groupId>com.yegor256</groupId>
-  <artifactId>goproxy</artifactId>
+  <groupId>com.artipie</groupId>
+  <artifactId>go-adapter</artifactId>
   <version>[...]</version>
 </dependency>
 ```
 
-Then, you implement `com.yegor256.goproxy.Storage` interface
-and pass it to the instance of `com.yegor256.goproxy.Goproxy`. Then, you
+Then, you implement `com.artipie.goproxy.Storage` interface
+and pass it to the instance of `Goproxy`. Then, you
 let it know when is the right moment to update certain artifact:
 
 ```java
@@ -42,7 +42,7 @@ Goproxy goproxy = new Goproxy(storage);
 goproxy.update("example.com/foo/bar", "0.0.1");
 ```
 
-Read the [Javadoc](http://www.javadoc.io/doc/com.yegor256/goproxy)
+Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/goproxy)
 for more technical details.
 
 ## How it works?
