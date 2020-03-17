@@ -46,9 +46,9 @@ import org.cactoos.list.ListOf;
  * The Go front.
  *
  * First, you make an instance of this class, providing
- * your storage as an argument:
+ * your storage and the Vertx instance as an arguments:
  *
- * <pre> Goproxy goproxy = new Goproxy(storage);</pre>
+ * <pre> Goproxy goproxy = new Goproxy(storage, vertx);</pre>
  *
  * Then, you put your Go sources to the storage and call
  * {@link Goproxy#update(String,String)}. This method will update all the
@@ -72,7 +72,7 @@ public final class Goproxy {
     /**
      * The storage.
      */
-    private final Storage storage;
+    private final RxStorageWrapper storage;
 
     /**
      * The vertx instance.
@@ -85,8 +85,8 @@ public final class Goproxy {
      * @param vertx The Vertx instance
      */
     public Goproxy(final Storage stg, final Vertx vertx) {
-        this.storage = stg;
         this.vertx = vertx;
+        this.storage = new RxStorageWrapper(stg);
     }
 
     /**
@@ -120,22 +120,22 @@ public final class Goproxy {
                     String.format("%s@v%s", repo, version)
                 )
             ).flatMapCompletable(
-                zip -> new RxStorageWrapper(this.storage).save(
+                zip -> this.storage.save(
                     new Key.From(String.format("%s/@v/v%s.zip", repo, version)),
                     new Content.From(new RxFile(zip, this.vertx.fileSystem()).flow())
                 ).andThen(Completable.fromAction(() -> Files.delete(zip)))
             ).andThen(generateVersionJson(version))
             .flatMapCompletable(
-                content -> new RxStorageWrapper(this.storage).save(
+                content -> this.storage.save(
                     new Key.From(String.format("%s/@v/v%s.info", repo, version)),
                     content
                 )
             ).andThen(
-                new RxStorageWrapper(this.storage).exists(new Key.From(lkey))
+                this.storage.exists(new Key.From(lkey))
             ).flatMap(
                 exists -> {
                     if (exists) {
-                        return new RxStorageWrapper(this.storage).value(new Key.From(lkey));
+                        return this.storage.value(new Key.From(lkey));
                     } else {
                         return Single.just(new Content.From(new byte[0]));
                     }
@@ -143,7 +143,7 @@ public final class Goproxy {
             .flatMap(
                 content -> updateFileList(version, content)
             ).flatMapCompletable(
-                content -> new RxStorageWrapper(this.storage).save(
+                content -> this.storage.save(
                     new Key.From(lkey),
                     content
                 )
@@ -157,7 +157,7 @@ public final class Goproxy {
      * @return Content of the to go.mod file.
      */
     private Single<Content> loadGoModFile(final String... parts) {
-        return new RxStorageWrapper(this.storage).value(
+        return this.storage.value(
             new Key.From(String.format("%s/go.mod", parts[1]))
         );
     }
@@ -172,7 +172,7 @@ public final class Goproxy {
      */
     private Completable saveModWithVersion(final String repo, final String version,
         final Content content) {
-        return new RxStorageWrapper(this.storage).save(
+        return this.storage.save(
             new Key.From(String.format("%s/@v/v%s.mod", repo, version)),
             content
         );
@@ -186,25 +186,47 @@ public final class Goproxy {
      * @return Updated content of files list.
      */
     private static Single<Content> updateFileList(final String version, final Content content) {
+        return readCompletely(content)
+            .map(
+                buf -> new Remaining(buf).bytes()
+            ).map(
+                buf -> appendLineToBuffer(buf, String.format("v%s", version))
+            ).map(Content.From::new);
+    }
+
+    /**
+     * Decode byte array as multi-line text and append the new line to the end.
+     * @param buffer Initial content as a byte array
+     * @param line Line to be appended
+     * @return Buffer with the new line appended
+     * @throws IOException if error occurred when transforming data.
+     */
+    private static byte[] appendLineToBuffer(final byte[] buffer,
+        final String line) throws IOException {
+        return new org.cactoos.text.Joined(
+        "\n",
+        new Joined<String>(
+            new ListOf<>(
+                new String(buffer).split("\n")
+            ),
+            new ListOf<>(line)
+        )
+        ).asString().getBytes();
+    }
+
+    /**
+     * Read all data from Content and put it into the ByteBuffer reactive.
+     * @param content Content instance to be read
+     * @return ByteBuffer contains all data from the content
+     */
+    private static Single<ByteBuffer> readCompletely(final Content content) {
         return Flowable.fromPublisher(content)
             .collectInto(
                 ByteBuffer.allocate(0),
                 (left, right) -> ByteBuffer.allocate(left.remaining() + right.remaining())
                     .put(left).put(right)
                     .flip()
-            ).map(
-                buf -> new Remaining(buf).bytes()
-            ).map(
-                buf -> new org.cactoos.text.Joined(
-                "\n",
-                new Joined<String>(
-                    new ListOf<>(
-                        new String(buf).split("\n")
-                    ),
-                    new ListOf<>(String.format("v%s", version))
-                )
-                ).asString().getBytes()
-            ).map(Content.From::new);
+            );
     }
 
     /**
@@ -234,7 +256,7 @@ public final class Goproxy {
     @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     private Single<Path> archive(final String prefix, final String target) throws IOException {
         final Path zip = Files.createTempFile("", ".zip");
-        return new RxStorageWrapper(this.storage).list(new Key.From(prefix))
+        return this.storage.list(new Key.From(prefix))
             .flatMapCompletable(
                 keys -> {
                     final ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zip));
@@ -248,7 +270,7 @@ public final class Goproxy {
                                 );
                                 final ZipEntry entry = new ZipEntry(path);
                                 out.putNextEntry(entry);
-                                return new RxStorageWrapper(this.storage).value(key)
+                                return this.storage.value(key)
                                     .flatMapPublisher(
                                         content -> content
                                     ).flatMapCompletable(
