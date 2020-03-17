@@ -111,27 +111,31 @@ public final class Goproxy {
     private Completable actualUpdate(final String repo, final String version) throws IOException {
         final String[] parts = repo.split("/", 2);
         final String lkey = String.format("%s/@v/list", repo);
-        return this.loadGoModFile(parts)
-            .flatMapCompletable(
+        return Completable.concatArray(
+            this.loadGoModFile(
+                parts
+            ).flatMapCompletable(
                 content -> this.saveModWithVersion(repo, version, content)
-            ).andThen(
-                this.archive(
-                    String.format("%s/", parts[1]),
-                    String.format("%s@v%s", repo, version)
-                )
+            ),
+            this.archive(
+                String.format("%s/", parts[1]),
+                String.format("%s@v%s", repo, version)
             ).flatMapCompletable(
                 zip -> this.storage.save(
                     new Key.From(String.format("%s/@v/v%s.zip", repo, version)),
                     new Content.From(new RxFile(zip, this.vertx.fileSystem()).flow())
                 ).andThen(Completable.fromAction(() -> Files.delete(zip)))
-            ).andThen(generateVersionJson(version))
-            .flatMapCompletable(
+            ),
+            generateVersionJson(
+                version
+            ).flatMapCompletable(
                 content -> this.storage.save(
                     new Key.From(String.format("%s/@v/v%s.info", repo, version)),
                     content
                 )
-            ).andThen(
-                this.storage.exists(new Key.From(lkey))
+            ),
+            this.storage.exists(
+                new Key.From(lkey)
             ).flatMap(
                 exists -> {
                     if (exists) {
@@ -147,7 +151,8 @@ public final class Goproxy {
                     new Key.From(lkey),
                     content
                 )
-            );
+            )
+        );
     }
 
     /**
