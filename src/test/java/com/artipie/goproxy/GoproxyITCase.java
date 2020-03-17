@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2019 Yegor Bugayenko
@@ -23,65 +23,44 @@
  */
 package com.artipie.goproxy;
 
+import com.artipie.asto.Storage;
+import com.artipie.asto.fs.FileStorage;
 import com.jcabi.log.Logger;
-import com.yegor256.asto.Storage;
+import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.cactoos.io.OutputTo;
 import org.cactoos.io.ResourceOf;
 import org.cactoos.io.TeeInput;
 import org.cactoos.scalar.LengthOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration case for {@link Goproxy}.
  *
- * @author Yegor Bugayenko (yegor256@gmail.com)
- * @version $Id$
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class GoproxyITCase {
-
     /**
-     * Temp folder for all tests.
-     */
-    @Rule
-    @SuppressWarnings("PMD.BeanMembersShouldSerialize")
-    public TemporaryFolder folder = new TemporaryFolder();
-
-    /**
-     * Make sure Go is here.
-     * @throws Exception If fails
-     */
-    @Before
-    public void goExists() throws Exception {
-        Assume.assumeThat(
-            "Go is NOT present at the build machine",
-            new ProcessBuilder()
-                .command("which", "go")
-                .start()
-                .waitFor(),
-            Matchers.equalTo(0)
-        );
-    }
-
-    /**
-     * RPM works.
+     * Test GoProxy works.
+     * @param folder Temporary folder for repo storage.
      * @throws Exception If some problem inside
      */
     @Test
     @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-    public void savesAndLoads() throws Exception {
-        final Path repo = this.folder.newFolder("repo").toPath();
+    public void savesAndLoads(@TempDir final Path folder) throws Exception {
+        final Path repo = folder.resolve("repo");
         for (final String file
             : new String[] {"bar.go", "go.mod", "texts/test.txt"}) {
             new LengthOf(
@@ -91,12 +70,13 @@ public final class GoproxyITCase {
                 )
             ).intValue();
         }
-        final Storage storage = new Storage.Simple(repo);
-        final Goproxy goproxy = new Goproxy(storage);
+        final Vertx vertx = Vertx.vertx();
+        final Storage storage = new FileStorage(repo, vertx.fileSystem());
+        final Goproxy goproxy = new Goproxy(storage, vertx);
         goproxy.update("example.com/foo/bar", "0.0.123").blockingAwait();
         goproxy.update("example.com/foo/bar", "0.0.124").blockingAwait();
-        final Path stdout = this.folder.newFile("stdout.txt").toPath();
-        final Path home = this.folder.newFolder("home").toPath();
+        final Path home = folder.resolve("home");
+        Files.createDirectory(home);
         Files.write(
             Paths.get(home.toString(), "go.mod"),
             String.join(
@@ -119,38 +99,75 @@ public final class GoproxyITCase {
                 "}"
             ).getBytes()
         );
-        new ProcessBuilder()
+        final ProcessBuilder pbuilder = new ProcessBuilder()
             .directory(home.toFile())
-            .command(
-                "/bin/bash",
-                "-c",
-                String.join(
-                    "\n",
-                    "set -e",
-                    "set -x",
-                    "export GOSUMDB=off",
-                    String.format("export GOPATH=%s/gopath", repo),
-                    String.format("export GOPROXY=file://%s", repo),
-                    "go install -v",
-                    "go run test.go"
-                )
+            .redirectOutput(folder.resolve("stdout.txt").toFile())
+            .redirectErrorStream(true);
+        pbuilder.environment().putAll(this.prepareProcessEnvironment(repo));
+        this.validateProcessOutput(
+            pbuilder.command("go", "install", "-v"),
+            "go: downloading example.com/foo/bar v0.0.124"
+        );
+        this.validateProcessOutput(
+            pbuilder.command("go", "run", "test.go"),
+            "Hey, you!",
+            "Works!!!"
+        );
+        pbuilder.command("go", "clean", "-modcache").start().waitFor();
+    }
+
+    /**
+     * Make sure Go is here.
+     * @throws Exception If fails
+     */
+    @BeforeAll
+    static void goExists() throws Exception {
+        MatcherAssert.assertThat(
+            "Go is NOT present at the build machine",
+            new ProcessBuilder()
+                .command("which", "go")
+                .start()
+                .waitFor(),
+            Matchers.equalTo(0)
+        );
+    }
+
+    /**
+     * Prepare system environment for Go process.
+     * See https://github.com/golang/go/issues/27698 for GOPROXY env
+     * @param repo Path to repo folder
+     * @return System environment variables
+     */
+    private Map<String, String> prepareProcessEnvironment(final Path repo) {
+        final Map<String, String> env = new HashMap<>();
+        env.put("GOSUMB", "off");
+        env.put("GOPATH", String.format("%s/gopath", repo));
+        env.put("GOPROXY", repo.toUri().toString().replace("///C:", "//C:"));
+        return env;
+    }
+
+    /**
+     * Run command and find substrings in the process output.
+     * @param pbuilder ProcessBuilder that pre-configured for Go run
+     * @param substrings Templates to be found in the process output
+     * @throws Exception
+     */
+    private void validateProcessOutput(final ProcessBuilder pbuilder,
+        final String... substrings) throws Exception {
+        pbuilder.start().waitFor();
+        final String log = new String(
+            Files.readAllBytes(
+                pbuilder.redirectOutput().file().toPath()
             )
-            .redirectOutput(stdout.toFile())
-            .redirectErrorStream(true)
-            .start()
-            .waitFor();
-        final String log = new String(Files.readAllBytes(stdout));
+        );
         Logger.debug(this, "Full stdout/stderr:\n%s", log);
         MatcherAssert.assertThat(
             log,
             Matchers.allOf(
-                Matchers.containsString(
-                    "go: downloading example.com/foo/bar v0.0.124"
-                ),
-                Matchers.containsString("Hey, you!"),
-                Matchers.containsString("Works!!!")
+                Arrays.stream(substrings)
+                    .map(Matchers::containsString)
+                    .collect(Collectors.toList())
             )
         );
     }
-
 }
