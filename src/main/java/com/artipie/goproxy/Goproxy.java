@@ -112,11 +112,10 @@ public final class Goproxy {
         final String[] parts = repo.split("/", 2);
         final String lkey = String.format("%s/@v/list", repo);
         return Completable.concatArray(
-            this.loadGoModFile(
-                parts
-            ).flatMapCompletable(
-                content -> this.saveModWithVersion(repo, version, content)
-            ),
+            this.loadGoModFile(parts)
+                .flatMapCompletable(
+                    content -> this.saveModWithVersion(repo, version, content)
+                ),
             this.archive(
                 String.format("%s/", parts[1]),
                 String.format("%s@v%s", repo, version)
@@ -126,14 +125,13 @@ public final class Goproxy {
                     new Content.From(new RxFile(zip, this.vertx.fileSystem()).flow())
                 ).andThen(Completable.fromAction(() -> Files.delete(zip)))
             ),
-            generateVersionJson(
-                version
-            ).flatMapCompletable(
-                content -> this.storage.save(
-                    new Key.From(String.format("%s/@v/v%s.info", repo, version)),
-                    content
-                )
-            ),
+            generateVersionJson(version)
+                .flatMapCompletable(
+                    content -> this.storage.save(
+                        new Key.From(String.format("%s/@v/v%s.info", repo, version)),
+                        content
+                    )
+                ),
             this.storage.exists(
                 new Key.From(lkey)
             ).flatMap(
