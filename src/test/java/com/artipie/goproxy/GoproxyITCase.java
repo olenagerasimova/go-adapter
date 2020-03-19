@@ -32,7 +32,9 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.cactoos.text.Joined;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,12 +62,7 @@ public final class GoproxyITCase {
      */
     private static GoContainer golang;
 
-    /**
-     * Test GoProxy works.
-     * @throws Exception If some problem inside
-     */
     @Test
-    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     public void savesAndLoads() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Storage storage = new FileStorage(GoproxyITCase.repo, vertx.fileSystem());
@@ -83,10 +80,6 @@ public final class GoproxyITCase {
         );
     }
 
-    /**
-     * Start GoLang container and make sure go is available.
-     * @throws Exception If fails
-     */
     @BeforeAll
     static void goExists() throws Exception {
         GoproxyITCase.repo = Paths.get(
@@ -103,12 +96,6 @@ public final class GoproxyITCase {
             .withWorkingDirectory("/opt/work")
             .withCommand("tail", "-f", "/dev/null");
         GoproxyITCase.golang.start();
-        final Container.ExecResult result = golang.execInContainer("which", "go");
-        MatcherAssert.assertThat(
-            "Go is NOT present at the build machine",
-            result.getExitCode(),
-            Matchers.equalTo(0)
-        );
     }
 
     /**
@@ -119,20 +106,14 @@ public final class GoproxyITCase {
         GoproxyITCase.golang.stop();
     }
 
-    /**
-     * Validate results of running command inside docker.
-     * @param result Result of execution command inside docker
-     * @param substrings Templates to be found in the process output
-     * @throws Exception
-     */
     private void validateResult(final Container.ExecResult result,
         final String... substrings) throws Exception {
-        MatcherAssert.assertThat(0, Matchers.equalTo(result.getExitCode()));
+        MatcherAssert.assertThat(0, new IsEqual<>(result.getExitCode()));
         MatcherAssert.assertThat(
             new Joined("\n", result.getStdout(), result.getStderr()).asString(),
-            Matchers.allOf(
+            new AllOf<>(
                 Arrays.stream(substrings)
-                    .map(Matchers::containsString)
+                    .map(StringContains::new)
                     .collect(Collectors.toList())
             )
         );
