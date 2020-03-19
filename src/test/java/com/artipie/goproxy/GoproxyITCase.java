@@ -140,7 +140,7 @@ public final class GoproxyITCase {
      */
     private Map<String, String> prepareProcessEnvironment(final Path repo) {
         final Map<String, String> env = new HashMap<>();
-        env.put("GOSUMB", "off");
+        env.put("GOSUMDB", "off");
         env.put("GOPATH", String.format("%s/gopath", repo));
         env.put("GOPROXY", repo.toUri().toString().replace("///C:", "//C:"));
         return env;
