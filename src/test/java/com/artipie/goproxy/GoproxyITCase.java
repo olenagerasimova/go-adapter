@@ -81,7 +81,7 @@ public final class GoproxyITCase {
     }
 
     @BeforeAll
-    static void goExists() throws Exception {
+    static void startContainer() throws Exception {
         GoproxyITCase.repo = Paths.get(
             Thread.currentThread()
             .getContextClassLoader()
@@ -98,9 +98,6 @@ public final class GoproxyITCase {
         GoproxyITCase.golang.start();
     }
 
-    /**
-     * Stop GoLang container after all tests.
-     */
     @AfterAll
     static void stopContainer() {
         GoproxyITCase.golang.stop();
