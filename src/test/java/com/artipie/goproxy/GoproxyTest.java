@@ -33,16 +33,16 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit test for generateVersionJson method.
+ * Unit test for Goproxy class.
  *
  * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-public class GenerateVersionJsonTest {
+public class GoproxyTest {
     @Test
-    public void testTruncateFractionsOfSecond() {
+    public void testGenerateVersionedJson() {
         final Instant timestamp = Instant.parse("2020-03-17T08:05:12.32496732Z");
-        final Single<Content> content = Goproxy.generateVersionJson(
+        final Single<Content> content = Goproxy.generateVersionedJson(
             "0.0.1", timestamp
         );
         final ByteBuffer data = content.flatMap(Goproxy::readCompletely).blockingGet();

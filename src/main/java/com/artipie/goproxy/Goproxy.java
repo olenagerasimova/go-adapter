@@ -110,7 +110,7 @@ public final class Goproxy {
      * @param timestamp The timestamp of the new version created
      * @return Content of the version json file
      */
-    static Single<Content> generateVersionJson(final String version, final Instant timestamp) {
+    static Single<Content> generateVersionedJson(final String version, final Instant timestamp) {
         return Single.just(
             new Content.From(
                 String.format(
@@ -161,7 +161,7 @@ public final class Goproxy {
                     new Content.From(new RxFile(zip, this.vertx.fileSystem()).flow())
                 ).andThen(Completable.fromAction(() -> Files.delete(zip)))
             ),
-            generateVersionJson(version, Instant.now())
+            generateVersionedJson(version, Instant.now())
                 .flatMapCompletable(
                     content -> this.storage.save(
                         new Key.From(String.format("%s/@v/v%s.info", repo, version)),
