@@ -40,7 +40,7 @@ import org.junit.jupiter.api.Test;
  */
 public class GoproxyTest {
     @Test
-    public void testGenerateVersionedJson() {
+    public void generatesVersionedJson() {
         final Instant timestamp = Instant.parse("2020-03-17T08:05:12.32496732Z");
         final Single<Content> content = Goproxy.generateVersionedJson(
             "0.0.1", timestamp
