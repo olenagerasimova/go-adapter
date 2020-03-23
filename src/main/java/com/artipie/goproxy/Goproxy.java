@@ -37,6 +37,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.cactoos.list.Joined;
@@ -101,6 +104,41 @@ public final class Goproxy {
     }
 
     /**
+     * Generate a json file with provided version.
+     *
+     * @param version The version of the repo, e.g. "0.0.1"
+     * @param timestamp The timestamp of the new version created
+     * @return Content of the version json file
+     */
+    static Single<Content> generateVersionedJson(final String version, final Instant timestamp) {
+        return Single.just(
+            new Content.From(
+                String.format(
+                    "{\"Version\":\"v%s\",\"Time\":\"%s\"}",
+                    version,
+                    DateTimeFormatter.ISO_INSTANT.format(timestamp.truncatedTo(ChronoUnit.SECONDS))
+                ).getBytes()
+            )
+        );
+    }
+
+    /**
+     * Read all data from Content and put it into the ByteBuffer reactive.
+     * @param content Content instance to be read
+     * @return ByteBuffer contains all data from the content
+     */
+    @SuppressWarnings("cast")
+    static Single<ByteBuffer> readCompletely(final Content content) {
+        return Flowable.fromPublisher(content)
+            .reduce(
+                ByteBuffer.allocate(0),
+                (left, right) ->
+                    (ByteBuffer) ByteBuffer.allocate(left.remaining() + right.remaining())
+                        .put(left).put(right).flip()
+            );
+    }
+
+    /**
      * Update the meta info by this artifact.
      *
      * @param repo The name of the repo just updated, e.g. "example.com/foo/bar"
@@ -125,7 +163,7 @@ public final class Goproxy {
                     new Content.From(new RxFile(zip, this.vertx.fileSystem()).flow())
                 ).andThen(Completable.fromAction(() -> Files.delete(zip)))
             ),
-            generateVersionJson(version)
+            generateVersionedJson(version, Instant.now())
                 .flatMapCompletable(
                     content -> this.storage.save(
                         new Key.From(String.format("%s/@v/v%s.info", repo, version)),
@@ -218,38 +256,6 @@ public final class Goproxy {
     }
 
     /**
-     * Read all data from Content and put it into the ByteBuffer reactive.
-     * @param content Content instance to be read
-     * @return ByteBuffer contains all data from the content
-     */
-    private static Single<ByteBuffer> readCompletely(final Content content) {
-        return Flowable.fromPublisher(content)
-            .collectInto(
-                ByteBuffer.allocate(0),
-                (left, right) -> ByteBuffer.allocate(left.remaining() + right.remaining())
-                    .put(left).put(right)
-                    .flip()
-            );
-    }
-
-    /**
-     * Generate a json file with provided version.
-     *
-     * @param version The version of the repo, e.g. "0.0.1"
-     * @return Content of the version json file
-     */
-    private static Single<Content> generateVersionJson(final String version) {
-        return Single.just(
-            new Content.From(
-                String.format(
-                    "{\"Version\":\"v%s\",\"Time\":\"2019-06-28T10:22:31Z\"}",
-                    version
-                ).getBytes()
-            )
-        );
-    }
-
-    /**
      * Make ZIP archive.
      * @param prefix The prefix
      * @param target The path in the ZIP archive to place files to
@@ -285,9 +291,11 @@ public final class Goproxy {
                                         }
                                     ).doOnTerminate(out::closeEntry);
                             }, false, 1
-                        )
-                            .doOnTerminate(out::close);
-                }).andThen(Single.just(zip));
+                        ).doOnTerminate(out::close);
+                }
+            ).andThen(
+                Single.just(zip)
+            );
     }
 
 }
