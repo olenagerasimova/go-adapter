@@ -132,8 +132,9 @@ public final class Goproxy {
         return Flowable.fromPublisher(content)
             .reduce(
                 ByteBuffer.allocate(0),
-                (left, right) -> (ByteBuffer) ByteBuffer.allocate(left.remaining() + right.remaining())
-                    .put(left).put(right).flip()
+                (left, right) ->
+                    (ByteBuffer) ByteBuffer.allocate(left.remaining() + right.remaining())
+                        .put(left).put(right).flip()
             );
     }
 
