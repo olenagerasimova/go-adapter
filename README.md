@@ -35,7 +35,7 @@ This is the dependency you need:
 </dependency>
 ```
 
-Then, you implement `com.artipie.goproxy.Storage` interface
+Then, you implement `com.artipie.asto.Storage` interface
 and pass it to the instance of `Goproxy`. Then, you
 let it know when is the right moment to update certain artifact:
 
