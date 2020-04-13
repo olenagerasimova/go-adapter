@@ -106,6 +106,150 @@ be created when you call `update("example.com/foo/first", "0.0.2").blockingAwait
 
 The file `list` will be updated.
 
+## Go module proxy protocol
+
+The most common way to get any source code, modules or packages while working with go is to use 
+go tool and `go get` command. This command can fetch modules directly from vcs or through HTTP proxy 
+using module proxy protocol. Detailed description about this mechanism can be found in Golang docs in 
+section [Remote import path](https://golang.org/cmd/go/#hdr-Remote_import_paths). 
+
+As described in [Golang docs](https://golang.org/cmd/go/#hdr-Module_proxy_protocol), go module proxy 
+is any web server that can respond to GET requests of a specified form. 
+
+Here is a full list of GET requests sent to a Go module proxy with corresponding examples:
+
+##### Getting a list of known versions of the given module 
+Request form: `GET $GOPROXY/<module>/@v/list`  
+Response: list of the existing versions, one for line in the response body
+```bash
+curl -i -H -G https://proxy.golang.org/github.com/liujianping/ts/@v/list
+HTTP/2 200 
+accept-ranges: bytes
+access-control-allow-origin: *
+content-length: 49
+content-type: text/plain; charset=UTF-8
+date: Thu, 09 Apr 2020 06:44:59 GMT
+expires: Thu, 09 Apr 2020 06:45:59 GMT
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+cache-control: public, max-age=60
+age: 39
+alt-svc: quic=":443"; ma=2592000; v="46,43",h3-Q050=":443"; ma=2592000,h3-Q049=":443"; ma=2592000,h3-Q048=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,h3-T050=":443"; ma=2592000
+
+v0.0.1
+v0.0.5
+v0.0.3
+v0.0.4
+v0.0.2
+v0.0.6
+v0.0.7
+```
+##### Getting json-formatted metadata for given version 
+Request form: `GET $GOPROXY/<module>/@v/<version>.info`  
+Response: .info file body in the response body
+```bash
+curl -i -H -G https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.info
+HTTP/2 200 
+accept-ranges: bytes
+access-control-allow-origin: *
+cache-control: public, max-age=10800
+content-length: 50
+content-type: application/json
+date: Thu, 09 Apr 2020 06:47:14 GMT
+expires: Thu, 09 Apr 2020 09:47:14 GMT
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+alt-svc: quic=":443"; ma=2592000; v="46,43",h3-Q050=":443"; ma=2592000,h3-Q049=":443"; ma=2592000,h3-Q048=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,h3-T050=":443"; ma=2592000
+
+{"Version":"v0.0.7","Time":"2019-06-28T10:22:31Z"}
+```
+##### Getting go.mod file for specified version 
+Request form: `GET $GOPROXY/<module>/@v/<version>.mod`  
+Response: .mod file body in the response body
+```bash
+curl -i -H -G https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.mod
+HTTP/2 200 
+accept-ranges: bytes
+access-control-allow-origin: *
+cache-control: public, max-age=10800
+content-length: 281
+content-type: text/plain; charset=UTF-8
+date: Thu, 09 Apr 2020 06:47:52 GMT
+etag: "6e2010ad8e07349f7e103b68ad02b0885033f4f39bf4bb5875bf5dc8b8add9d8"
+expires: Thu, 09 Apr 2020 09:47:52 GMT
+last-modified: Fri, 20 Sep 2019 19:26:17 GMT
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+alt-svc: quic=":443"; ma=2592000; v="46,43",h3-Q050=":443"; ma=2592000,h3-Q049=":443"; ma=2592000,h3-Q048=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,h3-T050=":443"; ma=2592000
+
+module github.com/liujianping/ts
+
+go 1.12
+
+require (
+	github.com/araddon/dateparse v0.0.0-20190622164848-0fb0a474d195
+	github.com/spf13/cobra v0.0.5
+	github.com/spf13/viper v1.4.0
+	github.com/stretchr/testify v1.3.0
+	github.com/x-mod/build v0.1.0
+	github.com/x-mod/errors v0.1.6
+)
+```
+##### Getting zip archive for specified version 
+Request form:`GET $GOPROXY/<module>/@v/<version>.zip`  
+Response: .zip file
+```bash
+curl -i -H -G https://proxy.golang.org/github.com/liujianping/ts/@v/v0.0.7.zip
+HTTP/2 200 
+accept-ranges: bytes
+access-control-allow-origin: *
+cache-control: public, max-age=10800
+content-length: 22758
+content-type: application/zip
+date: Thu, 09 Apr 2020 06:48:46 GMT
+etag: "dfabe462193440509ad742f00e11940d86a1b3610734e4c50ec2386f9fc04d59"
+expires: Thu, 09 Apr 2020 09:48:46 GMT
+last-modified: Fri, 20 Sep 2019 19:26:17 GMT
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+alt-svc: quic=":443"; ma=2592000; v="46,43",h3-Q050=":443"; ma=2592000,h3-Q049=":443"; ma=2592000,h3-Q048=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,h3-T050=":443"; ma=2592000
+
+//binary data
+```
+##### Getting metadata about latest known version 
+Request form: `GET $GOPROXY/<module>/@latest`  
+Response: JSON-formatted metadata(.info file body) about the latest known version
+```bash
+curl -i -H -G https://proxy.golang.org/github.com/liujianping/ts/@latest
+HTTP/2 200 
+accept-ranges: bytes
+access-control-allow-origin: *
+cache-control: public, max-age=60
+content-length: 50
+content-type: application/json
+date: Thu, 09 Apr 2020 06:53:25 GMT
+expires: Thu, 09 Apr 2020 06:54:25 GMT
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 0
+alt-svc: quic=":443"; ma=2592000; v="46,43",h3-Q050=":443"; ma=2592000,h3-Q049=":443"; ma=2592000,h3-Q048=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,h3-T050=":443"; ma=2592000
+
+{"Version":"v0.0.7","Time":"2019-06-28T10:22:31Z"}
+```
+
+<!-- 
+@todo #20:30min API for go repository: we are implementing `Slice` interface for Go in 
+ the following steps: 
+ first: add documentation (done, see Go module proxy protocol section), 
+ second: implement integration tests using Docker image with go and Testcontainers
+ third: implement `Slice` interface to support go module proxy protocol
+ For more details pleas address original task #20 
+-->
+
 ## How to contribute
 
 Fork repository, make changes, send us a pull request. We will review
