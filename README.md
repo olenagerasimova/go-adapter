@@ -109,16 +109,14 @@ The file `list` will be updated.
 ## Go module proxy protocol
 
 The most common way to get any source code, modules or packages while working with go is to use 
-go tool and `go get` command. Basically, `go get` can get desired modules either from vcs or download
-it over HTTP proxy using module proxy protocol. In Golang docs detailed description about this 
-mechanism can be found in [Remote import path](https://golang.org/cmd/go/#hdr-Remote_import_paths) 
-section. 
+go tool and `go get` command. This command can fetch modules directly from vcs or through HTTP proxy 
+using module proxy protocol. Detailed description about this mechanism can be found in Golang docs in 
+section [Remote import path](https://golang.org/cmd/go/#hdr-Remote_import_paths). 
 
 As described in [Golang docs](https://golang.org/cmd/go/#hdr-Module_proxy_protocol), go module proxy 
-is any web server that can respond to GET requests of specified form. While working with proxy `go get` 
-obtains all the modules and dependencies using configured proxy sending set of GET requests to it.
+is any web server that can respond to GET requests of a specified form. 
 
-Here is a full list of the requests sent along with corresponding responses:
+Here is a full list of GET requests sent to a Go module proxy with corresponding examples:
 
 ##### Getting a list of known versions of the given module 
 Request form: `GET $GOPROXY/<module>/@v/list`  
