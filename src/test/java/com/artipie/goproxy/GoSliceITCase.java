@@ -129,7 +129,7 @@ public class GoSliceITCase {
                 res = new RsWithBody(
                     new RsWithHeaders(
                         new RsWithStatus(RsStatus.OK),
-                        new ListOf<>(
+                        new ListOf<Map.Entry<String, String>>(
                             new MapEntry<>("content-type", "application/json")
                         )
                     ),
@@ -142,7 +142,7 @@ public class GoSliceITCase {
                 res = new RsWithBody(
                     new RsWithHeaders(
                         new RsWithStatus(RsStatus.OK),
-                        new ListOf<>(
+                        new ListOf<Map.Entry<String, String>>(
                             new MapEntry<>("content-type", "text/plain; charset=UTF-8")
                         )
                     ),
@@ -153,7 +153,7 @@ public class GoSliceITCase {
                     res = new RsWithBody(
                         new RsWithHeaders(
                             new RsWithStatus(RsStatus.OK),
-                            new ListOf<>(
+                            new ListOf<Map.Entry<String, String>>(
                                 new MapEntry<>("content-type", "application/zip")
                             )
                         ),
