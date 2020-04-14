@@ -126,10 +126,12 @@ public class GoSliceITCase {
             final Publisher<ByteBuffer> body) {
             final Response res;
             if (line.contains("latest") || line.contains("info")) {
-                res = con -> con.accept(
-                    RsStatus.OK,
-                    new ListOf<Map.Entry<String, String>>(
-                        new MapEntry<>("content-type", "application/json")
+                res = new RsWithBody(
+                    new RsWithHeaders(
+                        new RsWithStatus(RsStatus.OK),
+                        new ListOf<>(
+                            new MapEntry<>("content-type", "application/json")
+                        )
                     ),
                     //@checkstyle LineLengthCheck (1 line)
                     Flowable.fromArray(ByteBuffer.wrap("{\"Version\":\"v0.0.0-20191024005414-555d28b269f0\",\"Time\":\"2019-10-24T00:54:14Z\"}".getBytes()))
@@ -137,10 +139,12 @@ public class GoSliceITCase {
             } else if (line.contains("list")) {
                 res = Response.EMPTY;
             } else if (line.contains("mod")) {
-                res = con -> con.accept(
-                    RsStatus.OK,
-                    new ListOf<Map.Entry<String, String>>(
-                        new MapEntry<>("content-type", "text/plain; charset=UTF-8")
+                res = new RsWithBody(
+                    new RsWithHeaders(
+                        new RsWithStatus(RsStatus.OK),
+                        new ListOf<>(
+                            new MapEntry<>("content-type", "text/plain; charset=UTF-8")
+                        )
                     ),
                     Flowable.fromArray(ByteBuffer.wrap("module golang.org/x/time".getBytes()))
                 );
