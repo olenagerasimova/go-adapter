@@ -55,7 +55,6 @@ import org.testcontainers.containers.GenericContainer;
  * starts up Vertx server with {@link GoSlice} and sets up go module `time` using go adapter.
  * @since 0.3
  */
-@org.testcontainers.junit.jupiter.Testcontainers
 public class GoSliceITCase {
 
     /**
@@ -64,27 +63,20 @@ public class GoSliceITCase {
     private static final Vertx VERTX = Vertx.vertx();
 
     /**
-     * Port to listen for go adapter.
+     * Vertx instance.
      */
-    private static final int DEF_PORT = 9080;
+    private static VertxSliceServer slice;
 
     /**
      * GoLang container to verify Go repository layout.
      */
-    @org.testcontainers.junit.jupiter.Container
-    private final GenericContainer<?> golang = new GenericContainer<>("golang:latest")
-        .withEnv(
-            "GOPROXY",
-            String.format("http://host.testcontainers.internal:%d", GoSliceITCase.DEF_PORT)
-        )
-        .withEnv("GO111MODULE", "on")
-        .withCommand("tail", "-f", "/dev/null");
+    private static GenericContainer<?> golang;
 
     @Test
     void installsTimeModule() throws IOException, InterruptedException {
         MatcherAssert.assertThat(
-            this.golang.execInContainer("go", "get", "-x", "-insecure", "golang.org/x/time")
-                .getStderr(),
+            GoSliceITCase.golang
+                .execInContainer("go", "get", "-x", "-insecure", "golang.org/x/time").getStderr(),
             new StringContains(
                 "go: golang.org/x/time upgrade => v0.0.0-20191024005414-555d28b269f0"
             )
@@ -93,22 +85,32 @@ public class GoSliceITCase {
 
     @BeforeAll
     static void startContainer() {
-        Testcontainers.exposeHostPorts(GoSliceITCase.DEF_PORT);
-        new VertxSliceServer(
+        GoSliceITCase.slice = new VertxSliceServer(
             GoSliceITCase.VERTX,
             new SliceRoute(
                 new SliceRoute.Path(
                     new RtRule.ByPath(".*"),
                     new Fake()
                 )
-            ),
-            GoSliceITCase.DEF_PORT
-        ).start();
+            )
+        );
+        final int port = GoSliceITCase.slice.start();
+        Testcontainers.exposeHostPorts(port);
+        GoSliceITCase.golang = new GenericContainer<>("golang:latest")
+            .withEnv(
+                "GOPROXY",
+                String.format("http://host.testcontainers.internal:%d", port)
+            )
+            .withEnv("GO111MODULE", "on")
+            .withCommand("tail", "-f", "/dev/null");
+        GoSliceITCase.golang.start();
     }
 
     @AfterAll
     static void stopContainer() {
+        GoSliceITCase.slice.close();
         GoSliceITCase.VERTX.close();
+        GoSliceITCase.golang.stop();
     }
 
     /**
