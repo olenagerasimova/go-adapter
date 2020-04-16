@@ -29,7 +29,6 @@ SOFTWARE.
     <artifactId>ppom</artifactId>
     <version>0.3</version>
   </parent>
-  <groupId>com.artipie</groupId>
   <artifactId>go-adapter</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -128,18 +127,15 @@ SOFTWARE.
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
+<!--      <plugin>-->
+<!--        <artifactId>maven-compiler-plugin</artifactId>-->
+<!--        <configuration>-->
+<!--          <source>1.8</source>-->
+<!--          <target>1.8</target>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <parallel>none</parallel>
-        </configuration>
         <executions>
           <execution>
             <goals>
@@ -148,6 +144,10 @@ SOFTWARE.
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+          <trimStackTrace>false</trimStackTrace>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -185,12 +185,12 @@ SOFTWARE.
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.09</minimum>
+                      <minimum>0.06</minimum>
                     </limit>
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.11</minimum>
+                      <minimum>0.09</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
@@ -200,17 +200,17 @@ SOFTWARE.
                     <limit>
                       <counter>COMPLEXITY</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.11</minimum>
+                      <minimum>0.07</minimum>
                     </limit>
                     <limit>
                       <counter>METHOD</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.12</minimum>
+                      <minimum>0.08</minimum>
                     </limit>
                     <limit>
                       <counter>CLASS</counter>
                       <value>MISSEDCOUNT</value>
-                      <maximum>2</maximum>
+                      <maximum>6</maximum>
                     </limit>
 
                   </limits>

@@ -38,6 +38,7 @@ import org.reactivestreams.Publisher;
 /**
  * Go slice.
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class GoSlice implements Slice {
 

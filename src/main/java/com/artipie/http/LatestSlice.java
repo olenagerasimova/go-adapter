@@ -33,7 +33,7 @@ import org.reactivestreams.Publisher;
  * described in "JSON-formatted metadata(.info file body) about the latest known version"
  * section of readme.
  * @since 0.3
- * @todo #NN:30min Implement LatestSlice to get latest version of requested module, see readme for
+ * @todo #20:30min Implement LatestSlice to get latest version of requested module, see readme for
  *  details. While implementing try to extract working-with-storage logic into separate class,
  *  also check class Goproxy - maybe some code can be extracted from this class and reused. Do
  *  not forget about tests.

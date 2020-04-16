@@ -32,7 +32,7 @@ import org.reactivestreams.Publisher;
  * Go mod slice: this slice returns .zip file of go module as
  * described in "Getting zip archive for specified version" section of readme.
  * @since 0.3
- * @todo #NN:30min Implement ZipSlice to get zip archive for module, see readme for
+ * @todo #20:30min Implement ZipSlice to get zip archive for module, see readme for
  *  details. While implementing try to extract working-with-storage logic into separate class,
  *  also check class Goproxy - maybe some code can be extracted from this class and reused. Do
  *  not forget about tests.

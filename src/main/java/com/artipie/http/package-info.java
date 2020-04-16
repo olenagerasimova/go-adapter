@@ -21,27 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http;
-
-import java.nio.ByteBuffer;
-import java.util.Map;
-import org.apache.commons.lang3.NotImplementedException;
-import org.reactivestreams.Publisher;
 
 /**
- * Go list slice: this slice returns json metadata of go module as
- * described in "Getting json-formatted metadata for given version" section of readme.
+ * Goproxy http layer files.
  * @since 0.3
- * @todo #20:30min Implement InfoSlice to get info about requested module, see readme for
- *  details. While implementing try to extract working-with-storage logic into separate class,
- *  also check class Goproxy - maybe some code can be extracted from this class and reused. Do
- *  not forget about tests.
  */
-public final class InfoSlice implements Slice {
-    @Override
-    public Response response(
-        final String line, final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        throw new NotImplementedException("Not yet implemented");
-    }
-}
+package com.artipie.http;

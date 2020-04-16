@@ -32,7 +32,7 @@ import org.reactivestreams.Publisher;
  * Go mod slice: this slice returns .mod file body of go module as
  * described in "Getting go.mod file for specified version" section of readme.
  * @since 0.3
- * @todo #NN:30min Implement ModSlice to get .mod file requested module, see readme for
+ * @todo #20:30min Implement ModSlice to get .mod file requested module, see readme for
  *  details. While implementing try to extract working-with-storage logic into separate class,
  *  also check class Goproxy - maybe some code can be extracted from this class and reused. Do
  *  not forget about tests.

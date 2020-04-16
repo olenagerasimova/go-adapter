@@ -32,7 +32,7 @@ import org.reactivestreams.Publisher;
  * Go list slice: this slice returns list of the existing version of go module as
  * described in "Getting a list of known versions of the given module" section of readme.
  * @since 0.3
- * @todo #NN:30min Implement ListSlice to versions list of module, see readme for
+ * @todo #20:30min Implement ListSlice to versions list of module, see readme for
  *  details. While implementing try to extract working-with-storage logic into separate class,
  *  also check class Goproxy - maybe some code can be extracted from this class and reused. Do
  *  not forget about tests.
