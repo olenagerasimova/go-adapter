@@ -241,15 +241,6 @@ alt-svc: quic=":443"; ma=2592000; v="46,43",h3-Q050=":443"; ma=2592000,h3-Q049="
 {"Version":"v0.0.7","Time":"2019-06-28T10:22:31Z"}
 ```
 
-<!-- 
-@todo #20:30min API for go repository: we are implementing `Slice` interface for Go in 
- the following steps: 
- first: add documentation (done, see Go module proxy protocol section), 
- second: implement integration tests using Docker image with go and Testcontainers
- third: implement `Slice` interface to support go module proxy protocol
- For more details pleas address original task #20 
--->
-
 ## How to contribute
 
 Fork repository, make changes, send us a pull request. We will review
