@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
- * Go slice.
+ * Slice implementation that provides HTTP API (Go module proxy protocol) for Golang repository.
  * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
@@ -52,41 +52,11 @@ public final class GoSlice implements Slice {
      */
     public GoSlice() {
         this.origin = new SliceRoute(
-            new SliceRoute.Path(
-                new RtRule.Multiple(
-                    new RtRule.ByPath(Pattern.compile(".+/@v/v.*\\.info .+")),
-                    new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(new InfoSlice())
-            ),
-            new SliceRoute.Path(
-                new RtRule.Multiple(
-                    new RtRule.ByPath(Pattern.compile(".+/@v/v.*\\.mod .+")),
-                    new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(new ModSlice())
-            ),
-            new SliceRoute.Path(
-                new RtRule.Multiple(
-                    new RtRule.ByPath(Pattern.compile(".+/@v/v.*\\.zip .+")),
-                    new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(new ZipSlice())
-            ),
-            new SliceRoute.Path(
-                new RtRule.Multiple(
-                    new RtRule.ByPath(Pattern.compile(".+/@v/list .+")),
-                    new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(new ListSlice())
-            ),
-            new SliceRoute.Path(
-                new RtRule.Multiple(
-                    new RtRule.ByPath(Pattern.compile(".+/@v/latest .+")),
-                    new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(new LatestSlice())
-            ),
+            GoSlice.pathGet(".+/@v/v.*\\.info .+", new InfoSlice()),
+            GoSlice.pathGet(".+/@v/v.*\\.mod .+", new ModSlice()),
+            GoSlice.pathGet(".+/@v/v.*\\.zip .+", new ZipSlice()),
+            GoSlice.pathGet(".+/@v/list .+", new ListSlice()),
+            GoSlice.pathGet(".+/@v/latest .+", new ListSlice()),
             new SliceRoute.Path(
                 RtRule.FALLBACK,
                 new SliceSimple(
@@ -101,5 +71,21 @@ public final class GoSlice implements Slice {
         final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
         return this.origin.response(line, headers, body);
+    }
+
+    /**
+     * This method simply encapsulates all the RtRule instantiations.
+     * @param pattern Route pattern
+     * @param slice Slice implementation
+     * @return Path route slice
+     */
+    private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
+        return new SliceRoute.Path(
+            new RtRule.Multiple(
+                new RtRule.ByPath(Pattern.compile(pattern)),
+                new RtRule.ByMethod(RqMethod.GET)
+            ),
+            new LoggingSlice(slice)
+        );
     }
 }

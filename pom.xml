@@ -145,13 +145,13 @@ SOFTWARE.
   </dependencies>
   <build>
     <plugins>
-<!--      <plugin>-->
-<!--        <artifactId>maven-compiler-plugin</artifactId>-->
-<!--        <configuration>-->
-<!--          <source>1.8</source>-->
-<!--          <target>1.8</target>-->
-<!--        </configuration>-->
-<!--      </plugin>-->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <executions>
@@ -223,12 +223,12 @@ SOFTWARE.
                     <limit>
                       <counter>METHOD</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.08</minimum>
+                      <minimum>0.07</minimum>
                     </limit>
                     <limit>
                       <counter>CLASS</counter>
                       <value>MISSEDCOUNT</value>
-                      <maximum>6</maximum>
+                      <maximum>7</maximum>
                     </limit>
 
                   </limits>
