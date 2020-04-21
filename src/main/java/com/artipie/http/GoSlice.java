@@ -23,6 +23,7 @@
  */
 package com.artipie.http;
 
+import com.artipie.asto.Storage;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
@@ -49,12 +50,13 @@ public final class GoSlice implements Slice {
 
     /**
      * Ctor.
+     * @param storage Storage
      */
-    public GoSlice() {
+    public GoSlice(final Storage storage) {
         this.origin = new SliceRoute(
             GoSlice.pathGet(".+/@v/v.*\\.info .+", new InfoSlice()),
             GoSlice.pathGet(".+/@v/v.*\\.mod .+", new ModSlice()),
-            GoSlice.pathGet(".+/@v/v.*\\.zip .+", new ZipSlice()),
+            GoSlice.pathGet(".+/@v/v.*\\.zip .+", new ZipSlice(storage)),
             GoSlice.pathGet(".+/@v/list .+", new ListSlice()),
             GoSlice.pathGet(".+/@v/latest .+", new ListSlice()),
             new SliceRoute.Path(

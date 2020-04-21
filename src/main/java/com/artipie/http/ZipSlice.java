@@ -23,25 +23,45 @@
  */
 package com.artipie.http;
 
+import com.artipie.asto.Storage;
+import com.artipie.http.rs.RsWithHeaders;
+import com.artipie.http.slice.SliceDownload;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.apache.commons.lang3.NotImplementedException;
+import org.cactoos.list.ListOf;
+import org.cactoos.map.MapEntry;
 import org.reactivestreams.Publisher;
 
 /**
  * Go mod slice: this slice returns .zip file of go module as
  * described in "Getting zip archive for specified version" section of readme.
  * @since 0.3
- * @todo #20:30min Implement ZipSlice to get zip archive for module, see readme for
- *  details. While implementing try to extract working-with-storage logic into separate class,
- *  also check class Goproxy - maybe some code can be extracted from this class and reused. Do
- *  not forget about tests.
  */
 public final class ZipSlice implements Slice {
+
+    /**
+     * Origin.
+     */
+    private final Slice origin;
+
+    /**
+     * Ctor.
+     * @param storage Storage.
+     */
+    public ZipSlice(final Storage storage) {
+        this.origin = new SliceDownload(storage);
+    }
+
     @Override
     public Response response(
         final String line, final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        throw new NotImplementedException("Not yet implemented");
+        final Publisher<ByteBuffer> body
+    ) {
+        return new RsWithHeaders(
+            this.origin.response(line, headers, body),
+            new ListOf<Map.Entry<String, String>>(
+                new MapEntry<>("content-type", "application/zip")
+            )
+        );
     }
 }
