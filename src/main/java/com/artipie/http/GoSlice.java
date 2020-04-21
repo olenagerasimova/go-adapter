@@ -56,7 +56,9 @@ public final class GoSlice implements Slice {
         this.origin = new SliceRoute(
             GoSlice.pathGet(".+/@v/v.*\\.info .+", new InfoSlice()),
             GoSlice.pathGet(".+/@v/v.*\\.mod .+", new ModSlice()),
-            GoSlice.pathGet(".+/@v/v.*\\.zip .+", new ZipSlice(storage)),
+            GoSlice.pathGet(
+                ".+/@v/v.*\\.zip .+", new DownloadWithCntTypeSlice(storage, "application/zip")
+            ),
             GoSlice.pathGet(".+/@v/list .+", new ListSlice()),
             GoSlice.pathGet(".+/@v/latest .+", new ListSlice()),
             new SliceRoute.Path(

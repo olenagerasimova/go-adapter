@@ -33,23 +33,29 @@ import org.cactoos.map.MapEntry;
 import org.reactivestreams.Publisher;
 
 /**
- * Go mod slice: this slice returns .zip file of go module as
- * described in "Getting zip archive for specified version" section of readme.
+ * Download with content-type slice.
  * @since 0.3
  */
-public final class ZipSlice implements Slice {
+public final class DownloadWithCntTypeSlice implements Slice {
 
     /**
      * Origin.
      */
-    private final Slice origin;
+    private final SliceDownload origin;
+
+    /**
+     * Content-type.
+     */
+    private final String cnttype;
 
     /**
      * Ctor.
      * @param storage Storage.
+     * @param cnttype Content-type
      */
-    public ZipSlice(final Storage storage) {
+    public DownloadWithCntTypeSlice(final Storage storage, final String cnttype) {
         this.origin = new SliceDownload(storage);
+        this.cnttype = cnttype;
     }
 
     @Override
@@ -60,7 +66,7 @@ public final class ZipSlice implements Slice {
         return new RsWithHeaders(
             this.origin.response(line, headers, body),
             new ListOf<Map.Entry<String, String>>(
-                new MapEntry<>("content-type", "application/zip")
+                new MapEntry<>("content-type", this.cnttype)
             )
         );
     }

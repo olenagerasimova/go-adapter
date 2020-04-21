@@ -28,30 +28,30 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.hm.RsHasBody;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.rq.RequestLine;
-import com.artipie.http.slice.SliceDownload;
 import io.reactivex.Flowable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.cactoos.list.ListOf;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link ZipSlice}.
+ * Test for {@link DownloadWithCntTypeSlice}.
  * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle MethodBodyCommentsCheck (500 lines)
- * @checkstyle CommentsIndentationCheck (500 lines)
  */
-class ZipSliceTest {
+class DownloadWithCntTypeSliceTest {
 
     @Test
     void responsesWithZip() throws ExecutionException, InterruptedException, IOException {
@@ -64,21 +64,20 @@ class ZipSliceTest {
             zos.closeEntry();
         }
         storage.save(new Key.From(path), new Content.From(baos.toByteArray())).get();
+        final String cnttype = "application/zip";
         MatcherAssert.assertThat(
-            new SliceDownload(storage).response(
+            new DownloadWithCntTypeSlice(storage, cnttype).response(
                 new RequestLine("GET", path, "HTTP/1.1").toString(),
                 Collections.emptyList(), Flowable.empty()
             ),
             new AllOf<>(
                 new ListOf<Matcher<? super Response>>(
-                    new RsHasBody(baos.toByteArray())
-                    // @todo #34:30min Uncomment this part when RsHasHeaders will be fixed,
-                    //  check https://github.com/artipie/http/issues/129 for details.
-                    //  new RsHasHeaders(
-                    //      new ListOf<Map.Entry<String, String>>(
-                    //          new MapEntry<>("content-type", "application/zip")
-                    //      )
-                    //  )
+                    new RsHasBody(baos.toByteArray()),
+                    new RsHasHeaders(
+                        new ListOf<Map.Entry<String, String>>(
+                            new MapEntry<>("content-type", cnttype)
+                        )
+                    )
                 )
             )
         );
