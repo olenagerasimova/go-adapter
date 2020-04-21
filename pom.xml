@@ -29,7 +29,6 @@ SOFTWARE.
     <artifactId>ppom</artifactId>
     <version>0.3</version>
   </parent>
-  <groupId>com.artipie</groupId>
   <artifactId>go-adapter</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -94,6 +93,11 @@ SOFTWARE.
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
+      <artifactId>http</artifactId>
+      <version>0.7.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.artipie</groupId>
       <artifactId>vertx-server</artifactId>
       <scope>test</scope>
       <version>0.2.2</version>
@@ -150,9 +154,6 @@ SOFTWARE.
       </plugin>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <parallel>none</parallel>
-        </configuration>
         <executions>
           <execution>
             <goals>
@@ -161,6 +162,10 @@ SOFTWARE.
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+          <trimStackTrace>false</trimStackTrace>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -198,7 +203,7 @@ SOFTWARE.
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.06</minimum>
+                      <minimum>0.05</minimum>
                     </limit>
                     <limit>
                       <counter>LINE</counter>
