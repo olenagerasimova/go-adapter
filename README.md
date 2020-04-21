@@ -72,11 +72,12 @@ Four new files will be created:
 ```
 /example.com
   /foo
-    /first@v0.0.1
-      list
-      v0.0.1.zip
-      v0.0.1.mod
-      v0.0.1.info
+    /first
+      /@v
+        list
+        v0.0.1.zip
+        v0.0.1.mod
+        v0.0.1.info
 ```
 
 These files are needed for Go to understand that the package is ready
@@ -94,14 +95,15 @@ be created when you call `update("example.com/foo/first", "0.0.2").blockingAwait
 ```
 /example.com
   /foo
-    /first@v0.0.1
-      list
-      v0.0.1.zip
-      v0.0.1.mod
-      v0.0.1.info
-      v0.0.2.zip
-      v0.0.2.mod
-      v0.0.2.info
+    /first
+      /@v
+        list
+        v0.0.1.zip
+        v0.0.1.mod
+        v0.0.1.info
+        v0.0.2.zip
+        v0.0.2.mod
+        v0.0.2.info
 ```
 
 The file `list` will be updated.
