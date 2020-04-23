@@ -89,11 +89,6 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.7.4</version>
-    </dependency>
-    <dependency>
-      <groupId>com.artipie</groupId>
-      <artifactId>http</artifactId>
       <version>0.8.1</version>
     </dependency>
     <dependency>
