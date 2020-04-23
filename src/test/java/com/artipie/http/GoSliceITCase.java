@@ -27,6 +27,7 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rs.StandardRs;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.vertx.VertxSliceServer;
@@ -137,7 +138,7 @@ public class GoSliceITCase {
                     Flowable.fromArray(ByteBuffer.wrap("{\"Version\":\"v0.0.0-20191024005414-555d28b269f0\",\"Time\":\"2019-10-24T00:54:14Z\"}".getBytes()))
                 );
             } else if (line.contains("list")) {
-                res = Response.EMPTY;
+                res = StandardRs.EMPTY;
             } else if (line.contains("mod")) {
                 res = new RsWithBody(
                     new RsWithHeaders(
@@ -168,7 +169,7 @@ public class GoSliceITCase {
                     throw new RuntimeException(ex);
                 }
             } else {
-                res = Response.EMPTY;
+                res = StandardRs.EMPTY;
             }
             return res;
         }
