@@ -95,7 +95,7 @@ SOFTWARE.
       <groupId>com.artipie</groupId>
       <artifactId>vertx-server</artifactId>
       <scope>test</scope>
-      <version>0.2.2</version>
+      <version>0.3</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
