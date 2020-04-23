@@ -46,6 +46,8 @@ import org.reactivestreams.Publisher;
  * described in "JSON-formatted metadata(.info file body) about the latest known version"
  * section of readme.
  * @since 0.3
+ * @todo #33:30min Make `latest` replacement in response method more clear, for example
+ *  by using `URI` and removing last part of the path or something similar.
  */
 public final class LatestSlice implements Slice {
 

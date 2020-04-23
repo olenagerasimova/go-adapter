@@ -60,7 +60,7 @@ public final class GoSlice implements Slice {
                 ".+/@v/v.*\\.zip .+", new DownloadWithCntTypeSlice(storage, "application/zip")
             ),
             GoSlice.pathGet(".+/@v/list .+", new ListSlice()),
-            GoSlice.pathGet(".+/@v/latest .+", new ListSlice()),
+            GoSlice.pathGet(".+/@v/latest .+", new LatestSlice(storage)),
             new SliceRoute.Path(
                 RtRule.FALLBACK,
                 new SliceSimple(
