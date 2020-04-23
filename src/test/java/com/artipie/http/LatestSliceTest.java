@@ -57,7 +57,8 @@ public class LatestSliceTest {
             new KeyFromPath("example.com/latest/news/@v/v0.0.1.mod"), new Content.From(new byte[]{})
         ).get();
         storage.save(
-            new KeyFromPath("example.com/latest/news/@v/v0.0.1.info"), new Content.From(new byte[]{})
+            new KeyFromPath("example.com/latest/news/@v/v0.0.1.info"),
+            new Content.From(new byte[]{})
         ).get();
         storage.save(
             new KeyFromPath("example.com/latest/news/@v/v0.0.2.zip"), new Content.From(new byte[]{})
@@ -67,7 +68,8 @@ public class LatestSliceTest {
         ).get();
         final String info = "{\"Version\":\"v0.0.2\",\"Time\":\"2019-06-28T10:22:31Z\"}";
         storage.save(
-            new KeyFromPath("example.com/latest/news/@v/v0.0.2.info"), new Content.From(info.getBytes())
+            new KeyFromPath("example.com/latest/news/@v/v0.0.2.info"),
+            new Content.From(info.getBytes())
         ).get();
         MatcherAssert.assertThat(
             new LatestSlice(storage).response(
