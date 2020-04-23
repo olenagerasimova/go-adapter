@@ -51,27 +51,27 @@ public class LatestSliceTest {
     void returnsLatestVersion() throws ExecutionException, InterruptedException {
         final Storage storage = new InMemoryStorage();
         storage.save(
-            new KeyFromPath("example.com/foo/bar/@v/v0.0.1.zip"), new Content.From(new byte[]{})
+            new KeyFromPath("example.com/latest/news/@v/v0.0.1.zip"), new Content.From(new byte[]{})
         ).get();
         storage.save(
-            new KeyFromPath("example.com/foo/bar/@v/v0.0.1.mod"), new Content.From(new byte[]{})
+            new KeyFromPath("example.com/latest/news/@v/v0.0.1.mod"), new Content.From(new byte[]{})
         ).get();
         storage.save(
-            new KeyFromPath("example.com/foo/bar/@v/v0.0.1.info"), new Content.From(new byte[]{})
+            new KeyFromPath("example.com/latest/news/@v/v0.0.1.info"), new Content.From(new byte[]{})
         ).get();
         storage.save(
-            new KeyFromPath("example.com/foo/bar/@v/v0.0.2.zip"), new Content.From(new byte[]{})
+            new KeyFromPath("example.com/latest/news/@v/v0.0.2.zip"), new Content.From(new byte[]{})
         ).get();
         storage.save(
-            new KeyFromPath("example.com/foo/bar/@v/v0.0.2.mod"), new Content.From(new byte[]{})
+            new KeyFromPath("example.com/latest/news/@v/v0.0.2.mod"), new Content.From(new byte[]{})
         ).get();
         final String info = "{\"Version\":\"v0.0.2\",\"Time\":\"2019-06-28T10:22:31Z\"}";
         storage.save(
-            new KeyFromPath("example.com/foo/bar/@v/v0.0.2.info"), new Content.From(info.getBytes())
+            new KeyFromPath("example.com/latest/news/@v/v0.0.2.info"), new Content.From(info.getBytes())
         ).get();
         MatcherAssert.assertThat(
             new LatestSlice(storage).response(
-                "GET example.com/foo/bar/@latest HTTP/1.1", Headers.EMPTY, Flowable.empty()
+                "GET example.com/latest/news/@latest HTTP/1.1", Headers.EMPTY, Flowable.empty()
             ),
             new AllOf<>(
                 new ListOf<Matcher<? super Response>>(
