@@ -62,11 +62,6 @@ public class GoSliceITCase {
     private static final String VERSION = "v0.0.0-20191024005414-555d28b269f0";
 
     /**
-     * Zip extension.
-     */
-    private static final String ZIP = ".zip";
-
-    /**
      * Vertx instance.
      */
     private static VertxSliceServer slice;
@@ -123,11 +118,12 @@ public class GoSliceITCase {
     private static Storage create() throws Exception {
         final Storage res = new InMemoryStorage();
         final String path = "/golang.org/x/time/@v/%s%s";
+        final String zip = ".zip";
         //@checkstyle LineLengthCheck (4 lines)
         res.save(new KeyFromPath(String.format(path, "", "list")), new Content.From(VERSION.getBytes())).get();
         res.save(new KeyFromPath(String.format(path, VERSION, ".info")), new Content.From(String.format("{\"Version\":\"%s\",\"Time\":\"2019-10-24T00:54:14Z\"}", VERSION).getBytes())).get();
         res.save(new KeyFromPath(String.format(path, VERSION, ".mod")), new Content.From("module golang.org/x/time".getBytes())).get();
-        res.save(new KeyFromPath(String.format(path, VERSION, ZIP)), new Content.From(new BytesOf(new File(String.format("src/test/resources/%s%s", VERSION, ZIP))).asBytes())).get();
+        res.save(new KeyFromPath(String.format(path, VERSION, zip)), new Content.From(new BytesOf(new File(String.format("src/test/resources/%s%s", VERSION, zip))).asBytes())).get();
         return res;
     }
 }

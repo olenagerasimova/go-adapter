@@ -50,11 +50,6 @@ import org.reactivestreams.Publisher;
 public final class GoSlice implements Slice {
 
     /**
-     * Content-type header name.
-     */
-    private static final String CONTENT_TYPE = "content-type";
-
-    /**
      * Text header.
      */
     private static final String TEXT_PLAIN = "text/plane";
@@ -70,34 +65,10 @@ public final class GoSlice implements Slice {
      */
     public GoSlice(final Storage storage) {
         this.origin = new SliceRoute(
-            GoSlice.pathGet(
-                ".+/@v/v.*\\.info",
-                new SliceWithHeaders(
-                    new SliceDownload(storage),
-                    new Headers.From(GoSlice.CONTENT_TYPE, "application/json")
-                )
-            ),
-            GoSlice.pathGet(
-                ".+/@v/v.*\\.mod",
-                new SliceWithHeaders(
-                    new SliceDownload(storage),
-                    new Headers.From(GoSlice.CONTENT_TYPE, GoSlice.TEXT_PLAIN)
-                )
-            ),
-            GoSlice.pathGet(
-                ".+/@v/v.*\\.zip",
-                new SliceWithHeaders(
-                    new SliceDownload(storage),
-                    new Headers.From(GoSlice.CONTENT_TYPE, "application/zip")
-                )
-            ),
-            GoSlice.pathGet(
-                ".+/@v/list",
-                new SliceWithHeaders(
-                    new SliceDownload(storage),
-                    new Headers.From(GoSlice.CONTENT_TYPE, GoSlice.TEXT_PLAIN)
-                )
-            ),
+            GoSlice.pathGet(".+/@v/v.*\\.info", GoSlice.createSlice(storage, "application/json")),
+            GoSlice.pathGet(".+/@v/v.*\\.mod", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
+            GoSlice.pathGet(".+/@v/v.*\\.zip", GoSlice.createSlice(storage, "application/zip")),
+            GoSlice.pathGet(".+/@v/list", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
             GoSlice.pathGet(".+/@latest", new LatestSlice(storage)),
             new SliceRoute.Path(
                 RtRule.FALLBACK,
@@ -113,6 +84,19 @@ public final class GoSlice implements Slice {
         final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
         return this.origin.response(line, headers, body);
+    }
+
+    /**
+     * Creates slice instance.
+     * @param storage Storage
+     * @param type Content-type
+     * @return Slice
+     */
+    private static Slice createSlice(final Storage storage, final String type) {
+        return new SliceWithHeaders(
+            new SliceDownload(storage),
+            new Headers.From("content-type", type)
+        );
     }
 
     /**
