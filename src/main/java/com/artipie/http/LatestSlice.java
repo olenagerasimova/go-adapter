@@ -69,7 +69,7 @@ public final class LatestSlice implements Slice {
         final Publisher<ByteBuffer> body) {
         return new AsyncResponse(
             CompletableFuture.supplyAsync(
-                () -> LatestSlice.toV(line)
+                () -> LatestSlice.normalized(line)
             ).thenCompose(
                 path -> this.storage.list(new KeyFromPath(path)).thenCompose(this::resp)
             )
@@ -81,7 +81,7 @@ public final class LatestSlice implements Slice {
      * @param line Received request line
      * @return A URI path with replaced latest.
      */
-    private static String toV(final String line) {
+    private static String normalized(final String line) {
         final URI received = new RequestLineFrom(line).uri();
         String path = received.getPath();
         final String latest = "latest";
