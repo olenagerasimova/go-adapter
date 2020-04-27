@@ -33,6 +33,7 @@ import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Comparator;
@@ -46,8 +47,6 @@ import org.reactivestreams.Publisher;
  * described in "JSON-formatted metadata(.info file body) about the latest known version"
  * section of readme.
  * @since 0.3
- * @todo #33:30min Make `latest` replacement in response method more clear, for example
- *  by using `URI` and removing last part of the path or something similar.
  */
 public final class LatestSlice implements Slice {
 
@@ -70,11 +69,26 @@ public final class LatestSlice implements Slice {
         final Publisher<ByteBuffer> body) {
         return new AsyncResponse(
             CompletableFuture.supplyAsync(
-                () -> new RequestLineFrom(line.replace("latest ", "v ")).uri().getPath()
+                () -> LatestSlice.normalized(line)
             ).thenCompose(
                 path -> this.storage.list(new KeyFromPath(path)).thenCompose(this::resp)
             )
         );
+    }
+
+    /**
+     * Replaces the word latest if it is the last part of the URI path, by v. Then returns the path.
+     * @param line Received request line
+     * @return A URI path with replaced latest.
+     */
+    private static String normalized(final String line) {
+        final URI received = new RequestLineFrom(line).uri();
+        String path = received.getPath();
+        final String latest = "latest";
+        if (path.endsWith(latest)) {
+            path = path.substring(0, path.lastIndexOf(latest)).concat("v");
+        }
+        return path;
     }
 
     /**

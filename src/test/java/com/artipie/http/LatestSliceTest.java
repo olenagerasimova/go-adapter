@@ -73,7 +73,7 @@ public class LatestSliceTest {
         ).get();
         MatcherAssert.assertThat(
             new LatestSlice(storage).response(
-                "GET example.com/latest/news/@latest HTTP/1.1", Headers.EMPTY, Flowable.empty()
+                "GET example.com/latest/news/@latest?a=b HTTP/1.1", Headers.EMPTY, Flowable.empty()
             ),
             new AllOf<>(
                 new ListOf<Matcher<? super Response>>(
