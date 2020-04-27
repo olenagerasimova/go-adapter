@@ -43,8 +43,6 @@ import org.reactivestreams.Publisher;
  * @since 0.3
  * @todo #31:30min Create test (not ITcase) for this class: we need to properly test routing and
  *  fallback if no routes found.
- * @todo #31:30min Create class with main method to start go-adapter and describe setup/startup
- *  process and use scenarios in readme.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class GoSlice implements Slice {
@@ -52,7 +50,7 @@ public final class GoSlice implements Slice {
     /**
      * Text header.
      */
-    private static final String TEXT_PLAIN = "text/plane";
+    private static final String TEXT_PLAIN = "text/plain";
 
     /**
      * Origin.
