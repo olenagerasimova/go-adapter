@@ -23,29 +23,22 @@
  */
 package com.artipie.http;
 
-import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithBody;
-import com.artipie.http.rs.RsWithHeaders;
-import com.artipie.http.rs.RsWithStatus;
-import com.artipie.http.rs.StandardRs;
+import com.artipie.asto.Content;
+import com.artipie.asto.Storage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.slice.KeyFromPath;
 import com.artipie.vertx.VertxSliceServer;
-import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Map;
 import org.cactoos.io.BytesOf;
-import org.cactoos.list.ListOf;
-import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Publisher;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 
@@ -53,13 +46,20 @@ import org.testcontainers.containers.GenericContainer;
  * IT case for {@link GoSlice}: it runs Testcontainer with latest version of golang,
  * starts up Vertx server with {@link GoSlice} and sets up go module `time` using go adapter.
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.StaticAccessToStaticFields")
 public class GoSliceITCase {
 
     /**
      * Vertx instance.
      */
     private static final Vertx VERTX = Vertx.vertx();
+
+    /**
+     * Test module version.
+     */
+    private static final String VERSION = "v0.0.0-20191024005414-555d28b269f0";
 
     /**
      * Vertx instance.
@@ -76,20 +76,18 @@ public class GoSliceITCase {
         MatcherAssert.assertThat(
             GoSliceITCase.golang
                 .execInContainer("go", "get", "-x", "-insecure", "golang.org/x/time").getStderr(),
-            new StringContains(
-                "go: golang.org/x/time upgrade => v0.0.0-20191024005414-555d28b269f0"
-            )
+            new StringContains(String.format("go: golang.org/x/time upgrade => %s", VERSION))
         );
     }
 
     @BeforeAll
-    static void startContainer() {
+    static void startContainer() throws Exception {
         GoSliceITCase.slice = new VertxSliceServer(
             GoSliceITCase.VERTX,
             new SliceRoute(
                 new SliceRoute.Path(
                     new RtRule.ByPath(".*"),
-                    new Fake()
+                    new GoSlice(GoSliceITCase.create())
                 )
             )
         );
@@ -113,65 +111,19 @@ public class GoSliceITCase {
     }
 
     /**
-     * Fake implementation of slice.
-     * @since 0.3
-     * @checkstyle IllegalCatchCheck (500 lines)
+     * Creates test storage.
+     * @return Storage
+     * @throws Exception If smth wrong
      */
-    @SuppressWarnings({"PMD.AvoidCatchingGenericException",
-        "PMD.AvoidThrowingRawExceptionTypes", "PMD.AvoidDuplicateLiterals"})
-    static class Fake implements Slice {
-
-        @Override
-        public Response response(final String line,
-            final Iterable<Map.Entry<String, String>> headers,
-            final Publisher<ByteBuffer> body) {
-            final Response res;
-            if (line.contains("latest") || line.contains("info")) {
-                res = new RsWithBody(
-                    new RsWithHeaders(
-                        new RsWithStatus(RsStatus.OK),
-                        new ListOf<Map.Entry<String, String>>(
-                            new MapEntry<>("content-type", "application/json")
-                        )
-                    ),
-                    //@checkstyle LineLengthCheck (1 line)
-                    Flowable.fromArray(ByteBuffer.wrap("{\"Version\":\"v0.0.0-20191024005414-555d28b269f0\",\"Time\":\"2019-10-24T00:54:14Z\"}".getBytes()))
-                );
-            } else if (line.contains("list")) {
-                res = StandardRs.EMPTY;
-            } else if (line.contains("mod")) {
-                res = new RsWithBody(
-                    new RsWithHeaders(
-                        new RsWithStatus(RsStatus.OK),
-                        new ListOf<Map.Entry<String, String>>(
-                            new MapEntry<>("content-type", "text/plain; charset=UTF-8")
-                        )
-                    ),
-                    Flowable.fromArray(ByteBuffer.wrap("module golang.org/x/time".getBytes()))
-                );
-            } else if (line.contains("zip")) {
-                try {
-                    res = new RsWithBody(
-                        new RsWithHeaders(
-                            new RsWithStatus(RsStatus.OK),
-                            new ListOf<Map.Entry<String, String>>(
-                                new MapEntry<>("content-type", "application/zip")
-                            )
-                        ),
-                        ByteBuffer.wrap(
-                            new BytesOf(
-                                //@checkstyle LineLengthCheck (1 line)
-                                new File("src/test/resources/v0.0.0-20191024005414-555d28b269f0.zip")
-                            ).asBytes()
-                        )
-                    );
-                } catch (final Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-            } else {
-                res = StandardRs.EMPTY;
-            }
-            return res;
-        }
+    private static Storage create() throws Exception {
+        final Storage res = new InMemoryStorage();
+        final String path = "/golang.org/x/time/@v/%s%s";
+        final String zip = ".zip";
+        //@checkstyle LineLengthCheck (4 lines)
+        res.save(new KeyFromPath(String.format(path, "", "list")), new Content.From(VERSION.getBytes())).get();
+        res.save(new KeyFromPath(String.format(path, VERSION, ".info")), new Content.From(String.format("{\"Version\":\"%s\",\"Time\":\"2019-10-24T00:54:14Z\"}", VERSION).getBytes())).get();
+        res.save(new KeyFromPath(String.format(path, VERSION, ".mod")), new Content.From("module golang.org/x/time".getBytes())).get();
+        res.save(new KeyFromPath(String.format(path, VERSION, zip)), new Content.From(new BytesOf(new File(String.format("src/test/resources/%s%s", VERSION, zip))).asBytes())).get();
+        return res;
     }
 }

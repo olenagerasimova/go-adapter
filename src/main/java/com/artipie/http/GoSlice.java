@@ -30,7 +30,9 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.LoggingSlice;
+import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
+import com.artipie.http.slice.SliceWithHeaders;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -39,9 +41,16 @@ import org.reactivestreams.Publisher;
 /**
  * Slice implementation that provides HTTP API (Go module proxy protocol) for Golang repository.
  * @since 0.3
+ * @todo #31:30min Create test (not ITcase) for this class: we need to properly test routing and
+ *  fallback if no routes found.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class GoSlice implements Slice {
+
+    /**
+     * Text header.
+     */
+    private static final String TEXT_PLAIN = "text/plain";
 
     /**
      * Origin.
@@ -54,13 +63,11 @@ public final class GoSlice implements Slice {
      */
     public GoSlice(final Storage storage) {
         this.origin = new SliceRoute(
-            GoSlice.pathGet(".+/@v/v.*\\.info .+", new InfoSlice()),
-            GoSlice.pathGet(".+/@v/v.*\\.mod .+", new ModSlice()),
-            GoSlice.pathGet(
-                ".+/@v/v.*\\.zip .+", new DownloadWithCntTypeSlice(storage, "application/zip")
-            ),
-            GoSlice.pathGet(".+/@v/list .+", new ListSlice()),
-            GoSlice.pathGet(".+/@v/latest .+", new LatestSlice(storage)),
+            GoSlice.pathGet(".+/@v/v.*\\.info", GoSlice.createSlice(storage, "application/json")),
+            GoSlice.pathGet(".+/@v/v.*\\.mod", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
+            GoSlice.pathGet(".+/@v/v.*\\.zip", GoSlice.createSlice(storage, "application/zip")),
+            GoSlice.pathGet(".+/@v/list", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
+            GoSlice.pathGet(".+/@latest", new LatestSlice(storage)),
             new SliceRoute.Path(
                 RtRule.FALLBACK,
                 new SliceSimple(
@@ -75,6 +82,19 @@ public final class GoSlice implements Slice {
         final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
         return this.origin.response(line, headers, body);
+    }
+
+    /**
+     * Creates slice instance.
+     * @param storage Storage
+     * @param type Content-type
+     * @return Slice
+     */
+    private static Slice createSlice(final Storage storage, final String type) {
+        return new SliceWithHeaders(
+            new SliceDownload(storage),
+            new Headers.From("content-type", type)
+        );
     }
 
     /**
