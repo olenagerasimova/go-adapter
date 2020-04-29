@@ -6,12 +6,12 @@
 
 [![Build Status](https://img.shields.io/travis/artipie/go-adapter/master.svg)](https://travis-ci.org/artipie/go-adapter)
 [![Codecov branch](https://img.shields.io/codecov/c/gh/artipie/go-adapter/master)](https://codecov.io/gh/artipie/go-adapter/branch/master)
+[![Hits-of-Code](https://hitsofcode.com/github/artipie/go-adapter)](https://hitsofcode.com/view/github/artipie/go-adapter)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/go-adapter)](http://www.0pdd.com/p?name=artipie/go-adapter)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/go-adapter.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/go-adapter)
 [![Javadoc](http://www.javadoc.io/badge/com.artipie/go-adapter.svg)](http://www.javadoc.io/doc/com.artipie/go-adapter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/goproxy/blob/master/LICENSE.txt)
-[![Hits-of-Code](https://hitsofcode.com/github/artipie/go-adapter)](https://hitsofcode.com/view/github/artipie/go-adapter)
 
 
 
