@@ -8,7 +8,7 @@ name: Codecov
     branches:
       - master
 jobs:
-  build:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -27,6 +27,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-         file: ./target/site/jacoco/jacoco.xml
-         name: codecov-artipie-go-adapter
-         fail_ci_if_error: true
+          file: ./target/site/jacoco/jacoco.xml
+          fail_ci_if_error: true
