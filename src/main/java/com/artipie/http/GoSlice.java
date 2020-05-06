@@ -41,8 +41,6 @@ import org.reactivestreams.Publisher;
 /**
  * Slice implementation that provides HTTP API (Go module proxy protocol) for Golang repository.
  * @since 0.3
- * @todo #31:30min Create test (not ITcase) for this class: we need to properly test routing and
- *  fallback if no routes found.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class GoSlice implements Slice {
