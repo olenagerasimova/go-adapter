@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.KeyFromPath;
 import com.artipie.vertx.VertxSliceServer;
@@ -85,7 +86,7 @@ public class GoSliceITCase {
         GoSliceITCase.slice = new VertxSliceServer(
             GoSliceITCase.VERTX,
             new SliceRoute(
-                new SliceRoute.Path(
+                new RtRulePath(
                     new RtRule.ByPath(".*"),
                     new GoSlice(GoSliceITCase.create())
                 )
