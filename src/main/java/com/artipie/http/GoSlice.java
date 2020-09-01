@@ -27,7 +27,9 @@ import com.artipie.asto.Storage;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.http.slice.SliceDownload;
@@ -66,7 +68,7 @@ public final class GoSlice implements Slice {
             GoSlice.pathGet(".+/@v/v.*\\.zip", GoSlice.createSlice(storage, "application/zip")),
             GoSlice.pathGet(".+/@v/list", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
             GoSlice.pathGet(".+/@latest", new LatestSlice(storage)),
-            new SliceRoute.Path(
+            new RtRulePath(
                 RtRule.FALLBACK,
                 new SliceSimple(
                     new RsWithStatus(RsStatus.NOT_FOUND)
@@ -101,11 +103,11 @@ public final class GoSlice implements Slice {
      * @param slice Slice implementation
      * @return Path route slice
      */
-    private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
-        return new SliceRoute.Path(
-            new RtRule.Multiple(
+    private static RtRulePath pathGet(final String pattern, final Slice slice) {
+        return new RtRulePath(
+            new RtRule.All(
                 new RtRule.ByPath(Pattern.compile(pattern)),
-                new RtRule.ByMethod(RqMethod.GET)
+                new ByMethodsRule(RqMethod.GET)
             ),
             new LoggingSlice(slice)
         );
