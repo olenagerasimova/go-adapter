@@ -38,6 +38,8 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -51,6 +53,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @Testcontainers
+@DisabledOnOs(OS.WINDOWS)
 public final class GoproxyITCase {
     /**
      * Path to repo (will be used both in test and inside golang container).
