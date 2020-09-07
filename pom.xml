@@ -27,7 +27,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.3</version>
+    <version>0.3.10</version>
   </parent>
   <artifactId>go-adapter</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -95,7 +95,7 @@ SOFTWARE.
       <groupId>com.artipie</groupId>
       <artifactId>vertx-server</artifactId>
       <scope>test</scope>
-      <version>0.3</version>
+      <version>0.3.2</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -110,7 +110,7 @@ SOFTWARE.
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-      <version>1.13.0</version>
+      <version>1.14.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -139,6 +139,12 @@ SOFTWARE.
     </dependency>
   </dependencies>
   <build>
+    <testResources>
+      <testResource>
+        <directory>${basedir}/src/test/resources</directory>
+        <filtering>false</filtering>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

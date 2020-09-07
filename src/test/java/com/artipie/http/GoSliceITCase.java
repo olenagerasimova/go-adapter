@@ -40,6 +40,8 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 
@@ -50,6 +52,7 @@ import org.testcontainers.containers.GenericContainer;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.StaticAccessToStaticFields")
+@DisabledOnOs(OS.WINDOWS)
 public class GoSliceITCase {
 
     /**
