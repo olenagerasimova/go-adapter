@@ -32,7 +32,6 @@ import com.artipie.asto.rx.RxStorageWrapper;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -78,17 +77,10 @@ public final class Goproxy {
     private final RxStorageWrapper storage;
 
     /**
-     * The vertx instance.
-     */
-    private final Vertx vertx;
-
-    /**
      * Ctor.
      * @param stg The storage
-     * @param vertx The Vertx instance
      */
-    public Goproxy(final Storage stg, final Vertx vertx) {
-        this.vertx = vertx;
+    public Goproxy(final Storage stg) {
         this.storage = new RxStorageWrapper(stg);
     }
 
@@ -160,7 +152,7 @@ public final class Goproxy {
             ).flatMapCompletable(
                 zip -> this.storage.save(
                     new Key.From(String.format("%s/@v/v%s.zip", repo, version)),
-                    new Content.From(new RxFile(zip, this.vertx.fileSystem()).flow())
+                    new Content.From(new RxFile(zip).flow())
                 ).andThen(Completable.fromAction(() -> Files.delete(zip)))
             ),
             generateVersionedJson(version, Instant.now())

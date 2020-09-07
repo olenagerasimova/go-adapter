@@ -25,7 +25,6 @@ package com.artipie.goproxy;
 
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
-import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -64,9 +63,8 @@ public final class GoproxyITCase {
 
     @Test
     public void savesAndLoads() throws Exception {
-        final Vertx vertx = Vertx.vertx();
-        final Storage storage = new FileStorage(GoproxyITCase.repo, vertx.fileSystem());
-        final Goproxy goproxy = new Goproxy(storage, vertx);
+        final Storage storage = new FileStorage(GoproxyITCase.repo);
+        final Goproxy goproxy = new Goproxy(storage);
         goproxy.update("example.com/foo/bar", "0.0.123").blockingAwait();
         goproxy.update("example.com/foo/bar", "0.0.124").blockingAwait();
         this.validateResult(
