@@ -26,6 +26,10 @@ package com.artipie.http;
 import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.auth.Authentication;
+import com.artipie.http.auth.BasicIdentities;
+import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
@@ -33,15 +37,16 @@ import com.artipie.http.slice.KeyFromPath;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
 import java.io.File;
-import java.io.IOException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.cactoos.io.BytesOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 
@@ -49,11 +54,14 @@ import org.testcontainers.containers.GenericContainer;
  * IT case for {@link GoSlice}: it runs Testcontainer with latest version of golang,
  * starts up Vertx server with {@link GoSlice} and sets up go module `time` using go adapter.
  * @since 0.3
+ * @todo #62:30min Make this test work with authorization, for now go refuses to send username and
+ *  password parameters to insecure url with corresponding error: "refusing to pass credentials
+ *  to insecure URL".
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.StaticAccessToStaticFields")
 @DisabledOnOs(OS.WINDOWS)
-public class GoSliceITCase {
+public final class GoSliceITCase {
 
     /**
      * Vertx instance.
@@ -66,6 +74,11 @@ public class GoSliceITCase {
     private static final String VERSION = "v0.0.0-20191024005414-555d28b269f0";
 
     /**
+     * Test user.
+     */
+    private static final Pair<String, String> USER = new ImmutablePair<>("Alice", "wonderland");
+
+    /**
      * Vertx instance.
      */
     private static VertxSliceServer slice;
@@ -75,33 +88,45 @@ public class GoSliceITCase {
      */
     private static GenericContainer<?> golang;
 
-    @Test
-    void installsTimeModule() throws IOException, InterruptedException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true})
+    void installsTimeModule(final boolean anonymous) throws Exception {
+        GoSliceITCase.startContainer(anonymous);
         MatcherAssert.assertThat(
             GoSliceITCase.golang
-                .execInContainer("go", "get", "-x", "-insecure", "golang.org/x/time").getStderr(),
+                .execInContainer("go", "get", "-insecure", "golang.org/x/time").getStderr(),
             new StringContains(String.format("go: golang.org/x/time upgrade => %s", VERSION))
         );
     }
 
-    @BeforeAll
-    static void startContainer() throws Exception {
+    static void startContainer(final boolean anonymous) throws Exception {
         GoSliceITCase.slice = new VertxSliceServer(
             GoSliceITCase.VERTX,
             new SliceRoute(
                 new RtRulePath(
                     new RtRule.ByPath(".*"),
-                    new GoSlice(GoSliceITCase.create())
+                    new GoSlice(
+                        GoSliceITCase.create(), GoSliceITCase.perms(anonymous),
+                        GoSliceITCase.users(anonymous)
+                    )
                 )
             )
         );
         final int port = GoSliceITCase.slice.start();
         Testcontainers.exposeHostPorts(port);
+        final String template = "http://%shost.testcontainers.internal:%d";
+        final String url;
+        if (anonymous) {
+            url = String.format(template, "", port);
+        } else {
+            url = String.format(
+                template,
+                String.format("%s:%s@", GoSliceITCase.USER.getKey(), GoSliceITCase.USER.getValue()),
+                port
+            );
+        }
         GoSliceITCase.golang = new GenericContainer<>("golang:latest")
-            .withEnv(
-                "GOPROXY",
-                String.format("http://host.testcontainers.internal:%d", port)
-            )
+            .withEnv("GOPROXY", url)
             .withEnv("GO111MODULE", "on")
             .withCommand("tail", "-f", "/dev/null");
         GoSliceITCase.golang.start();
@@ -112,6 +137,40 @@ public class GoSliceITCase {
         GoSliceITCase.slice.close();
         GoSliceITCase.VERTX.close();
         GoSliceITCase.golang.stop();
+    }
+
+    /**
+     * Permissions.
+     * @param anonymous Is auth required?
+     * @return Permissions instance
+     */
+    private static Permissions perms(final boolean anonymous) {
+        final Permissions res;
+        if (anonymous) {
+            res = Permissions.FREE;
+        } else {
+            res = new Permissions.Single(GoSliceITCase.USER.getKey(), "download");
+        }
+        return res;
+    }
+
+    /**
+     * Identities.
+     * @param anonymous Is auth required?
+     * @return Identities instance
+     */
+    private static Identities users(final boolean anonymous) {
+        final Identities res;
+        if (anonymous) {
+            res = Identities.ANONYMOUS;
+        } else {
+            res = new BasicIdentities(
+                new Authentication.Single(
+                    GoSliceITCase.USER.getKey(), GoSliceITCase.USER.getValue()
+                )
+            );
+        }
+        return res;
     }
 
     /**
