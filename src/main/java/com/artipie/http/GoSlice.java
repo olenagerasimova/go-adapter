@@ -24,6 +24,12 @@
 package com.artipie.http;
 
 import com.artipie.asto.Storage;
+import com.artipie.http.auth.Authentication;
+import com.artipie.http.auth.BasicIdentities;
+import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.Permission;
+import com.artipie.http.auth.Permissions;
+import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
@@ -53,6 +59,11 @@ public final class GoSlice implements Slice {
     private static final String TEXT_PLAIN = "text/plain";
 
     /**
+     * Permission name.
+     */
+    private static final String DOWNLOAD = "download";
+
+    /**
      * Origin.
      */
     private final Slice origin;
@@ -62,12 +73,48 @@ public final class GoSlice implements Slice {
      * @param storage Storage
      */
     public GoSlice(final Storage storage) {
+        this(storage, Permissions.FREE, Identities.ANONYMOUS);
+    }
+
+    /**
+     * Ctor.
+     * @param storage Storage
+     * @param perms Permissions
+     * @param auth Authentication
+     */
+    public GoSlice(final Storage storage, final Permissions perms, final Authentication auth) {
+        this(storage, perms, new BasicIdentities(auth));
+    }
+
+    /**
+     * Ctor.
+     * @param storage Storage
+     * @param perms Permissions
+     * @param users Users
+     */
+    public GoSlice(final Storage storage, final Permissions perms, final Identities users) {
         this.origin = new SliceRoute(
-            GoSlice.pathGet(".+/@v/v.*\\.info", GoSlice.createSlice(storage, "application/json")),
-            GoSlice.pathGet(".+/@v/v.*\\.mod", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
-            GoSlice.pathGet(".+/@v/v.*\\.zip", GoSlice.createSlice(storage, "application/zip")),
-            GoSlice.pathGet(".+/@v/list", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN)),
-            GoSlice.pathGet(".+/@latest", new LatestSlice(storage)),
+            GoSlice.pathGet(
+                ".+/@v/v.*\\.info",
+                GoSlice.createSlice(storage, "application/json", perms, users)
+            ),
+            GoSlice.pathGet(
+                ".+/@v/v.*\\.mod",
+                GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN, perms, users)
+            ),
+            GoSlice.pathGet(
+                ".+/@v/v.*\\.zip", GoSlice.createSlice(storage, "application/zip", perms, users)
+            ),
+            GoSlice.pathGet(
+                ".+/@v/list", GoSlice.createSlice(storage, GoSlice.TEXT_PLAIN, perms, users)
+            ),
+            GoSlice.pathGet(
+                ".+/@latest",
+                new SliceAuth(
+                    new LatestSlice(storage),
+                    new Permission.ByName(GoSlice.DOWNLOAD, perms), users
+                )
+            ),
             new RtRulePath(
                 RtRule.FALLBACK,
                 new SliceSimple(
@@ -88,12 +135,20 @@ public final class GoSlice implements Slice {
      * Creates slice instance.
      * @param storage Storage
      * @param type Content-type
+     * @param perms Permissions
+     * @param users Users
      * @return Slice
+     * @checkstyle ParameterNumberCheck (10 lines)
      */
-    private static Slice createSlice(final Storage storage, final String type) {
-        return new SliceWithHeaders(
-            new SliceDownload(storage),
-            new Headers.From("content-type", type)
+    private static Slice createSlice(final Storage storage, final String type,
+        final Permissions perms, final Identities users) {
+        return new SliceAuth(
+            new SliceWithHeaders(
+                new SliceDownload(storage),
+                new Headers.From("content-type", type)
+            ),
+            new Permission.ByName(GoSlice.DOWNLOAD, perms),
+            users
         );
     }
 
